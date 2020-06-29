@@ -12,10 +12,6 @@ Parameters:
     Type: String
   NodeInstanceRoleArn:
     Type: String
-  CleanupLoadBalancersLambdaArn:
-    Type: String
-  GetCallerArnLambdaArn:
-    Type: String
   AdditionalEKSAdminUserArn:
     Type: String
     Default: ""
@@ -57,6 +53,8 @@ Parameters:
     AllowedValues: [ "Enabled", "Disabled" ]
     Default: "Disabled"
   EKSClusterName:
+    Type: String
+  SharedResourcesPrefix:
     Type: String
 Conditions:
   AddUser: !Not [ !Equals [ !Ref AdditionalEKSAdminUserArn, "" ] ]
@@ -145,12 +143,12 @@ Resources:
   CleanupLoadBalancers:
     Type: Custom::CleanupLoadBalancers
     Properties:
-      ServiceToken: !Ref CleanupLoadBalancersLambdaArn
+      ServiceToken: !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SharedResourcesPrefix}-CleanupLoadBalancers'
       ClusterName: !Ref EKS
   CallerArn:
     Type: Custom::GetCallerArn
     Properties:
-      ServiceToken: !Ref GetCallerArnLambdaArn
+      ServiceToken: !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SharedResourcesPrefix}-GetCallerArn'
   ClusterOIDCProvider:
     Condition: EnableIamOidcProvider
     Type: Custom::ClusterOIDCProvider

@@ -8,8 +8,6 @@ Parameters:
     Type: String
   FargateExecutionRoleArn:
     Type: String
-  FargateProfileLambdaArn:
-    Type: String
   Namespaces:
     Type: String
   Labels:
@@ -17,13 +15,15 @@ Parameters:
     Default: ""
   Subnets:
     Type: List<String>
+  SharedResourcesPrefix:
+    Type: String
 Conditions:
   UseLabels: !Not [ !Equals [ !Ref Labels, "" ] ]
 Resources:
   FargateProfile:
     Type: "Custom::Fargate"
     Properties:
-      ServiceToken: !Ref FargateProfileLambdaArn
+      ServiceToken: !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SharedResourcesPrefix}-FargateProfile'
       ClusterName: !Ref ClusterName
       IamRole: !Ref FargateExecutionRoleArn
       Namespaces: !Split [ ",", !Ref Namespaces ]

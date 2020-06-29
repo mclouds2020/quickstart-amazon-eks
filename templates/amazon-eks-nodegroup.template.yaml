@@ -42,8 +42,6 @@ Metadata:
           - QSS3BucketName
           - QSS3KeyPrefix
           - QSS3BucketRegion
-          - CleanupSecurityGroupDependenciesLambdaArn
-          - NodeSGFunctionArn
     ParameterLabels:
       QSS3BucketRegion:
         default: Quick Start S3 bucket region
@@ -81,8 +79,6 @@ Metadata:
         default: Quick Start S3 bucket name
       QSS3KeyPrefix:
         default: Quick Start S3 key prefix
-      CleanupSecurityGroupDependenciesLambdaArn:
-        default: Cleanup Security Group dependencies Lambda ARN
       BootstrapArguments:
         default: Bootstrap arguments
       ControlPlaneSecurityGroup:
@@ -101,8 +97,6 @@ Metadata:
         default: HTTP proxy
       TargetGroupARNs:
         default: Target Group ARN's
-      NodeSGFunctionArn:
-        default: Node security group Lambda ARN
   AWSAMIRegionMap:
     Filters:
       AMZNEKS116:
@@ -190,10 +184,6 @@ Parameters:
   VPCID:
     Description: ID of your existing VPC for deployment
     Type: AWS::EC2::VPC::Id
-  CleanupSecurityGroupDependenciesLambdaArn:
-    Description: ARN for CleanupSecurityGroupDependencies lambda function
-    Type: String
-    Default: ""
   NodeInstanceType:
     Default: t3.medium
     AllowedValues:
@@ -365,14 +355,13 @@ Parameters:
     Type: String
     Default: ""
     Description: "[OPTIONAL] Specify the host name for an HTTP proxy to use for outbound internet access."
-  NodeSGFunctionArn:
-    Type: String
-    Description: Function ARN to fetch node Security Group for managed node groups
   ProvisionClusterAutoScaler:
     Type: String
     AllowedValues: [ Enabled, Disabled ]
     Default: Disabled
     Description: Choose Enabled to enable Kubernetes cluster autoscaler.
+  SharedResourcesPrefix:
+    Type: String
 Conditions:
   EnableProxy: !Not [!Equals [!Ref HttpProxy, ""]]
   3AZDeployment: !Not [!Equals [!Ref PrivateSubnet3ID, ""]]
@@ -393,10 +382,7 @@ Conditions:
     - !Ref NumberOfNodes
     - 1
   UseCustomAmi: !Not [ !Equals [ !Ref CustomAmiId, "" ] ]
-  CleanupSGs: !Or
-    - !Not [ !Equals [ !Ref CleanupSecurityGroupDependenciesLambdaArn, "" ] ]
-    - !Equals [ !Ref 'ManagedNodeGroup', 'no' ]
-  AutoScalerDisabled: !Equals [ !Ref 'ProvisionClusterAutoScaler', 'Disabled' ]
+  CleanupSGs: !Equals [ !Ref 'ManagedNodeGroup', 'no' ]
   DisableManagedNodeGroup: !Equals [ !Ref 'ManagedNodeGroup' , 'no' ]
   EnableManagedNodeGroup: !Equals [ !Ref 'ManagedNodeGroup', 'yes' ]
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
@@ -807,7 +793,7 @@ Resources:
     Condition: CleanupSGs
     Type: Custom::Cleanup
     Properties:
-      ServiceToken: !Ref CleanupSecurityGroupDependenciesLambdaArn
+      ServiceToken: !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SharedResourcesPrefix}-CleanupSecurityGroupDependencies'
       SecurityGroups:
         - !If
           - DisableManagedNodeGroup
@@ -878,7 +864,7 @@ Resources:
     Condition: EnableManagedNodeGroup
     Type: Custom::NodeSG
     Properties:
-      ServiceToken: !Ref NodeSGFunctionArn
+      ServiceToken: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${SharedResourcesPrefix}-NodeSG"
       ClusterName: !Ref EKSControlPlane
       NodeGroupName: !GetAtt EKSNodegroup.NodegroupName
   NodeGroup:
