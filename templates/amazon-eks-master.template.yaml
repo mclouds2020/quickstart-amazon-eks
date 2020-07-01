@@ -552,8 +552,7 @@ Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
 Mappings:
   Config:
-    Version:
-      Number: v2.0.1
+    Prefix: { Value: 'eks-quickstart' }
 Resources:
   AccountSharedResources:
     Type: AWS::CloudFormation::Stack
@@ -564,10 +563,7 @@ Resources:
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-account-resources.template.yaml'
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-      Parameters:
-        Prefix: !Ref SharedResourcesPrefix
-        Version: !FindInMap [Config, Version, Number]
-      Tags: [{Key: !Ref SharedResourcesPrefix, Value: AccountSharedResources}]
+      Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: AccountSharedResources}]
   RegionalSharedResources:
     Type: AWS::CloudFormation::Stack
     Condition: CreatePerRegionSharedResources
@@ -580,12 +576,10 @@ Resources:
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
-        Prefix: !Ref SharedResourcesPrefix
-        Version: !FindInMap [Config, Version, Number]
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         QSS3BucketRegion: !Ref QSS3BucketRegion
-      Tags: [{Key: !Ref SharedResourcesPrefix, Value: RegionalSharedResources}]
+      Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: RegionalSharedResources}]
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Metadata:
@@ -678,7 +672,6 @@ Resources:
         SnykIntegration: !Ref SnykIntegration
         NewRelicLicenseKey: !Ref NewRelicLicenseKey
         NewRelicIntegration: !Ref NewRelicIntegration
-        SharedResourcesPrefix: !Ref SharedResourcesPrefix
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName

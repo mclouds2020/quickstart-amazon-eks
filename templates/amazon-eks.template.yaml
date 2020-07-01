@@ -280,9 +280,9 @@ Parameters:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
-  SharedResourcesPrefix:
-    Type: String
-    Default: eks-quickstart
+Mappings:
+  Config:
+    Prefix: { Value: 'eks-quickstart' }
 Conditions:
   EnableSnyk: !Equals [ !Ref SnykIntegration, Enabled]
   EnableNewRelic: !Equals [ !Ref NewRelicIntegration, Enabled]
@@ -375,7 +375,6 @@ Resources:
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
-        SharedResourcesPrefix: !Ref SharedResourcesPrefix
         TargetGroupARNs: ""
         ProvisionClusterAutoScaler: !Ref ProvisionClusterAutoScaler
         HttpProxy: !Ref HttpProxy
@@ -444,7 +443,7 @@ Resources:
         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
-        LambdaZipsBucketName: !Sub '${SharedResourcesPrefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        LambdaZipsBucketName: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         KubernetesAdminRoleArn: !GetAtt IamStack.Outputs.KubernetesAdminRoleArn
         ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
@@ -457,7 +456,6 @@ Resources:
             - !Join [",", [ !Ref PrivateSubnet1ID, !Ref PrivateSubnet2ID ]]
             - !Ref PrivateSubnet1ID
         EKSClusterName: !If [GenerateClusterName, !Ref GenerateName, !Ref EKSClusterName]
-        SharedResourcesPrefix: !Ref SharedResourcesPrefix
   ClusterAutoScalerStack:
     Condition: EnableClusterAutoScaler
     Metadata:
@@ -477,7 +475,7 @@ Resources:
         KubernetesVersion: !Ref KubernetesVersion
   EfsStack:
     Condition: EnableEfs
-    Type: AWS::CloudFormation::Stack
+    Type: 'AWS::CloudFormation::Stack'
     Metadata:
       DependsOn:
         - !Ref ControlPlaneSecurityGroupIngress
@@ -535,7 +533,7 @@ Resources:
               - 2AZDeployment
               - !Join [",", [ !Ref PrivateSubnet1ID, !Ref PrivateSubnet2ID ]]
               - !Join [",", [ !Ref PrivateSubnet1ID ]]
-        RoleArn: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${SharedResourcesPrefix}-ControlPlane"
+        RoleArn: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-ControlPlane", {Prefix: !FindInMap [Config, Prefix, Value]}]
         NodeInstanceRoleArn: !GetAtt IamStack.Outputs.NodeInstanceRoleArn
         AdditionalEKSAdminUserArn: !Ref AdditionalEKSAdminUserArn
         AdditionalEKSAdminRoleArn: !Ref AdditionalEKSAdminRoleArn
@@ -550,7 +548,6 @@ Resources:
         EKSEncryptSecretsKmsKeyArn: !Ref EKSEncryptSecretsKmsKeyArn
         IamOidcProvider: !If [ EnableALBIngressController, 'Enabled', !Ref IamOidcProvider ]
         EKSClusterName: !If [GenerateClusterName, !Ref GenerateName, !Ref EKSClusterName]
-        SharedResourcesPrefix: !Ref SharedResourcesPrefix
   PrometheusStack:
     Metadata:
       DependsOn:
@@ -591,7 +588,7 @@ Resources:
            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         ClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
-        FargateExecutionRoleArn: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${SharedResourcesPrefix}-FargateExecution"
+        FargateExecutionRoleArn: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-FargateExecution", {Prefix: !FindInMap [Config, Prefix, Value]}]
         Namespaces: !Ref FargateNamespaces
         Labels: !Ref FargateLabels
         Subnets: !If
@@ -601,7 +598,6 @@ Resources:
             - 2AZDeployment
             - !Join [",", [ !Ref PrivateSubnet1ID, !Ref PrivateSubnet2ID ]]
             - !Ref PrivateSubnet1ID
-        SharedResourcesPrefix: !Ref SharedResourcesPrefix
   ALBIngressStack:
     Metadata:
       DependsOn:
@@ -625,7 +621,7 @@ Resources:
       Description: Copies objects from a source S3 bucket to a destination
       Handler: index.handler
       Runtime: python3.7
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${SharedResourcesPrefix}-CopyZips"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CopyZips", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Timeout: 900
       Code:
         ZipFile: |

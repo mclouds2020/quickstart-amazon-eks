@@ -1,17 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Shared resources required by all Amazon EKS Quick Start stacks in this account.
-Parameters:
-  Prefix:
-    Type: String
-    Default: eks-quickstart
-  Version:
-    Type: String
-    Default: 1.0.0-dev0
+Mappings:
+  Config:
+    Prefix: { Value: 'eks-quickstart' }
 Resources:
   CopyZipsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-CopyZips'
+      RoleName: !Sub ['${Prefix}-CopyZips', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -32,7 +28,7 @@ Resources:
   ResourceReaderRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-ResourceReader'
+      RoleName: !Sub ['${Prefix}-ResourceReader', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -46,7 +42,7 @@ Resources:
   CreateVpcRoleRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-CreateVpcRole'
+      RoleName: !Sub ['${Prefix}-CreateVpcRole', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -75,7 +71,7 @@ Resources:
   DeleteBucketContentsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-DeleteBucketContents'
+      RoleName: !Sub ['${Prefix}-DeleteBucketContents', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -88,7 +84,7 @@ Resources:
   ControlPlaneRole:
     Type: "AWS::IAM::Role"
     Properties:
-      RoleName: !Sub '${Prefix}-ControlPlane'
+      RoleName: !Sub ['${Prefix}-ControlPlane', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -102,7 +98,7 @@ Resources:
   CleanupLoadBalancersRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-CleanupLoadBalancers'
+      RoleName: !Sub ['${Prefix}-CleanupLoadBalancers', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Statement:
           - Action: ['sts:AssumeRole']
@@ -137,7 +133,7 @@ Resources:
   CleanupSecurityGroupDependenciesRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-CleanupSecurityGroupDependencies'
+      RoleName: !Sub ['${Prefix}-CleanupSecurityGroupDependencies', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Statement:
           - Action: ['sts:AssumeRole']
@@ -169,7 +165,7 @@ Resources:
   CleanupLambdasRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-CleanupLambdas'
+      RoleName: !Sub ['${Prefix}-CleanupLambdas', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Statement:
           - Action: ['sts:AssumeRole']
@@ -198,7 +194,7 @@ Resources:
   GetCallerArnRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-GetCallerArn'
+      RoleName: !Sub ['${Prefix}-GetCallerArn', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Statement:
           - Action: ['sts:AssumeRole']
@@ -226,7 +222,7 @@ Resources:
   RegisterTypeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-RegisterType'
+      RoleName: !Sub ['${Prefix}-RegisterType', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -259,7 +255,7 @@ Resources:
   RegisterCustomResourceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-RegisterCustomResource'
+      RoleName: !Sub ['${Prefix}-RegisterCustomResource', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -292,7 +288,7 @@ Resources:
   NodeSGRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-NodeSG'
+      RoleName: !Sub ['${Prefix}-NodeSG', {Prefix: !FindInMap [Config, Prefix, Value]}]
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       AssumeRolePolicyDocument:
@@ -314,7 +310,7 @@ Resources:
   FargateExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-FargateExecution'
+      RoleName: !Sub ['${Prefix}-FargateExecution', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -328,7 +324,7 @@ Resources:
   FargateProfileRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${Prefix}-FargateProfile'
+      RoleName: !Sub ['${Prefix}-FargateProfile', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -352,3 +348,115 @@ Resources:
                   - "iam:CreateServiceLinkedRole"
                   - "ec2:DescribeSubnets"
                 Resource: "*"
+  ParameterResolverRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ['${Prefix}-ParameterResolver', {Prefix: !FindInMap [Config, Prefix, Value]}]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: param-resolver
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParametersByPath'
+                  - 'ssm:GetParameters'
+                  - 'ssm:GetParameterHistory'
+                  - 'ssm:GetParameter'
+                Resource: !Sub ['arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/quickstart/${Prefix}/*', {Prefix: !FindInMap [Config, Prefix, Value]}]
+  ParameterResolverFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: 'QuickStart-ParameterResolver'
+      Code:
+        ZipFile: |
+          import traceback
+          import json
+          import re
+          import boto3
+          from functools import partial
+
+
+          def template_iterator(obj, params, ssm, prefix):
+              if isinstance(obj, dict):
+                  for k in obj:
+                      obj[k] = template_iterator(obj[k], params, ssm, prefix)
+              elif isinstance(obj, list):
+                  for i, v in enumerate(obj):
+                      obj[i] = template_iterator(v, params, ssm, prefix)
+              elif isinstance(obj, str):
+                  func = partial(resolver, ssm, prefix, params['params'])
+                  obj = re.sub(r'{%[\w/<>]+%}', func, obj)
+              return obj
+
+
+          def resolver(ssm, prefix, params, match):
+              default = None
+              param = match.group()[2:-2]
+              if param.startswith('%'):
+                  return match.group()
+              if '|' in param:
+                  default = ''.join(param.split('|')[1:])
+                  param = param.split('|')[0]
+              func = partial(param_resolve, params)
+              param = re.sub(r'<\w+>', func, param)
+              try:
+                  resp = ssm.get_parameter(Name=prefix + param)
+              except ssm.exceptions.ParameterNotFound:
+                  if default is None:
+                      raise Exception(f"Parameter {param} not found")
+                  return default
+              return resp['Parameter']['Value']
+
+
+          def param_resolve(params, match):
+              return params[match.group()[1:-1]]
+
+
+          def handler(event, _c):
+              print(json.dumps(event))
+              macro_response = {
+                  "requestId": event["requestId"],
+                  "status": "success"
+              }
+              try:
+                  ssm = boto3.client('ssm', region_name=event["region"])
+                  params = {
+                      "params": event["templateParameterValues"],
+                      "template": event["fragment"],
+                      "account_id": event["accountId"],
+                      "region": event["region"]
+                  }
+                  response = event["fragment"]
+                  prefix = params['template'].get('Mappings',{}).get('Config',{}).get('ParameterPrefix',{}).get('Value',"")
+                  macro_response["fragment"] = template_iterator(response, params, ssm, prefix)
+              except Exception as e:
+                  traceback.print_exc()
+                  macro_response["status"] = "failure"
+                  macro_response["errorMessage"] = str(e)
+              return macro_response
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt ParameterResolverRole.Arn
+  ParameterResolverFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt ParameterResolverFunction.Arn
+      Principal: 'cloudformation.amazonaws.com'
+  ParameterResolver:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      Name: 'QuickStartParameterResolver'
+      Description: Resolves ssm parameters in templates
+      FunctionName: !GetAtt ParameterResolverFunction.Arn

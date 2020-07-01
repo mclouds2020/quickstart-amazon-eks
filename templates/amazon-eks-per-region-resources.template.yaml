@@ -1,12 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Shared resources required by all Amazon EKS Quick Start stacks in this region.
 Parameters:
-  Prefix:
-    Type: String
-    Default: eks-quickstart
-  Version:
-    Type: String
-    Default: 1.0.0-dev0
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
@@ -33,16 +27,19 @@ Parameters:
     Type: String
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
+Mappings:
+  Config:
+    Prefix: { Value: 'eks-quickstart' }
 Resources:
   LambdaZipsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+      BucketName: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
   CopyZipsRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      Roles: [!Sub '${Prefix}-CopyZips']
-      PolicyName: !Sub '${Prefix}-lambda-zip-bucket-access-${AWS::Region}'
+      Roles: [!Sub ['${Prefix}-CopyZips', {Prefix: !FindInMap [Config, Prefix, Value]}]]
+      PolicyName: !Sub ['${Prefix}-lambda-zip-bucket-access-${AWS::Region}', {Prefix: !FindInMap [Config, Prefix, Value]}]
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -54,8 +51,8 @@ Resources:
   DeleteBucketContentsRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      Roles: [!Sub '${Prefix}-DeleteBucketContents']
-      PolicyName: !Sub '${Prefix}-delete-bucket-contents-${AWS::Region}'
+      Roles: [!Sub ['${Prefix}-DeleteBucketContents', {Prefix: !FindInMap [Config, Prefix, Value]}]]
+      PolicyName: !Sub ['${Prefix}-delete-bucket-contents-${AWS::Region}', {Prefix: !FindInMap [Config, Prefix, Value]}]
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -68,11 +65,11 @@ Resources:
     Type: AWS::Lambda::Function
     DependsOn: CopyZipsRolePolicy
     Properties:
-      FunctionName: !Sub '${Prefix}-CopyZips'
+      FunctionName: !Sub ['${Prefix}-CopyZips', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Description: Copies objects from a source S3 bucket to a destination
       Handler: index.handler
       Runtime: python3.7
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CopyZips"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CopyZips", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Timeout: 900
       Code:
         ZipFile: |
@@ -155,7 +152,7 @@ Resources:
     DependsOn: CopyZips
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub '${Prefix}-Kubectl'
+      LayerName: !Sub ['${Prefix}-Kubectl', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Content:
         S3Bucket: !Ref LambdaZipsBucket
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubectlLayer/lambda.zip'
@@ -163,7 +160,7 @@ Resources:
     DependsOn: CopyZips
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub '${Prefix}-AwsCli'
+      LayerName: !Sub ['${Prefix}-AwsCli', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Content:
         S3Bucket: !Ref LambdaZipsBucket
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/awscliLayer/lambda.zip'
@@ -171,7 +168,7 @@ Resources:
     DependsOn: CopyZips
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub '${Prefix}-Crhelper'
+      LayerName: !Sub ['${Prefix}-Crhelper', {Prefix: !FindInMap [Config, Prefix, Value]}]
       CompatibleRuntimes:
         - python3.6
         - python3.7
@@ -181,15 +178,15 @@ Resources:
   CreateVpcRoleLambda:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub '${Prefix}-CreateVpcRole'
+      FunctionName: !Sub ['${Prefix}-CreateVpcRole', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CreateVpcRole"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CreateVpcRole", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Layers: [!Ref CrhelperLayer]
       Runtime: python3.7
       Timeout: 900
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/createVpcRole/lambda.zip'
   CreateVpcRole:
     Type: Custom::CreateVpcRole
@@ -199,54 +196,54 @@ Resources:
   CleanupLoadBalancersLambda:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub '${Prefix}-CleanupLoadBalancers'
+      FunctionName: !Sub ['${Prefix}-CleanupLoadBalancers', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CleanupLoadBalancers"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CleanupLoadBalancers", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Runtime: python3.7
       Timeout: 900
       Layers: [!Ref CrhelperLayer]
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/CleanupLoadBalancers/lambda.zip'
   CleanupLambdasLambda:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub '${Prefix}-CleanupLambdas'
+      FunctionName: !Sub ['${Prefix}-CleanupLambdas', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CleanupLambdas"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CleanupLambdas", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Runtime: python3.7
       Timeout: 900
       Layers: [!Ref CrhelperLayer]
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/CleanupLambdas/lambda.zip'
   RegisterTypeFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub '${Prefix}-RegisterType'
+      FunctionName: !Sub ['${Prefix}-RegisterType', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-RegisterType"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-RegisterType", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Layers: [!Ref CrhelperLayer]
       Runtime: python3.7
       Timeout: 900
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/registerType/lambda.zip'
   RegisterCustomResourceFunction:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub '${Prefix}-RegisterCustomResource'
+      FunctionName: !Sub ['${Prefix}-RegisterCustomResource', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-RegisterCustomResource"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-RegisterCustomResource", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Layers: [!Ref CrhelperLayer]
       Runtime: python3.7
       Timeout: 900
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/registerCustomResource/lambda.zip'
   RegisterEksClusterType:
     DependsOn: ArtifactCopyPolicy
@@ -255,7 +252,7 @@ Resources:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
       Version: "1.0.0-beta4"
       TypeName: "AWSQS::EKS::Cluster"
-      SchemaHandlerPackage: !Sub "s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/EksClusterResource/awsqs-eks-cluster.zip"
+      SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/EksClusterResource/awsqs-eks-cluster.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
       IamPolicy:
         Version: '2012-10-17'
         Statement:
@@ -279,7 +276,7 @@ Resources:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
       TypeName: "AWSQS::Kubernetes::Helm"
       Version: "1.0.0-beta4"
-      SchemaHandlerPackage: !Sub "s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip"
+      SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
       IamPolicy:
         Version: '2012-10-17'
         Statement:
@@ -307,50 +304,50 @@ Resources:
   CleanupSecurityGroupDependenciesLambda:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub '${Prefix}-CleanupSecurityGroupDependencies'
+      FunctionName: !Sub ['${Prefix}-CleanupSecurityGroupDependencies', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CleanupSecurityGroupDependencies"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CleanupSecurityGroupDependencies", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Layers: [!Ref CrhelperLayer]
       Runtime: python3.7
       Timeout: 900
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/CleanupSecurityGroupDependencies/lambda.zip'
   DeleteBucketContentsLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub '${Prefix}-DeleteBucketContents'
+      FunctionName: !Sub ['${Prefix}-DeleteBucketContents', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-DeleteBucketContents"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-DeleteBucketContents", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Runtime: python3.7
       Timeout: 900
       Layers: [!Ref 'CrhelperLayer']
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/DeleteBucketContents/lambda.zip'
   GetCallerArnLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub '${Prefix}-GetCallerArn'
+      FunctionName: !Sub ['${Prefix}-GetCallerArn', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-GetCallerArn"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-GetCallerArn", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Runtime: python3.7
       Timeout: 900
       Layers: [!Ref 'CrhelperLayer']
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/GetCallerArn/lambda.zip'
   NodeSGFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub '${Prefix}-NodeSG'
+      FunctionName: !Sub ['${Prefix}-NodeSG', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Description: Fetches the Security Group ID for a given EKS Managed Node Group
       Handler: index.handler
       Runtime: python3.7
-      Role:  !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-NodeSG"
+      Role:  !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-NodeSG", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Timeout: 900
       Layers: [!Ref 'CrhelperLayer']
       Code:
@@ -381,29 +378,24 @@ Resources:
   FargateProfileLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub '${Prefix}-FargateProfile'
+      FunctionName: !Sub ['${Prefix}-FargateProfile', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-FargateProfile"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-FargateProfile", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Runtime: python3.7
       Timeout: 900
       Layers: [!Ref 'CrhelperLayer']
       Code:
-        S3Bucket: !Sub '${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}'
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/FargateProfile/lambda.zip'
-
-  ########################
-  ####### ORIGINAL #######
-  ########################
-
   ResourceReaderFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-ResourceReader'
+      FunctionName: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-ResourceReader', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Description: Performs an AWS CLI command and returns the json result. Used to get the state of existing resources.
       Handler: index.handler
       Runtime: python3.7
-      Role: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-ResourceReader"
+      Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-ResourceReader", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Timeout: 900
       Code:
         ZipFile: |
@@ -490,17 +482,3 @@ Resources:
                   status = cfnresponse.FAILED
               finally:
                   cfnresponse.send(event, context, status, resp, pid)
-  GetSharedStackArn:
-    Type: Custom::CliQuery
-    Properties:
-      ServiceToken: !GetAtt ResourceReaderFunction.Arn
-      AwsCliCommand: |
-        cloudformation describe-stacks --stack-name EKS-QuickStart-Shared --query 'Stacks[?StackStatus!=`DELETE_IN_PROGRESS`]|[0].{StackId: StackId}'
-      IdField: 'StackId'
-  GetSharedStackVersion:
-    Type: Custom::CliQuery
-    Properties:
-      ServiceToken: !GetAtt ResourceReaderFunction.Arn
-      AwsCliCommand: |
-        cloudformation describe-stacks --stack-name EKS-QuickStart-Shared --query 'Stacks[?StackStatus!=`DELETE_IN_PROGRESS`]|[0].{Version: Parameters[?ParameterKey==`Versioner`]|[0].ParameterValue}'
-      IdField: 'Version'

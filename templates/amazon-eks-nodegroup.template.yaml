@@ -360,8 +360,6 @@ Parameters:
     AllowedValues: [ Enabled, Disabled ]
     Default: Disabled
     Description: Choose Enabled to enable Kubernetes cluster autoscaler.
-  SharedResourcesPrefix:
-    Type: String
 Conditions:
   EnableProxy: !Not [!Equals [!Ref HttpProxy, ""]]
   3AZDeployment: !Not [!Equals [!Ref PrivateSubnet3ID, ""]]
@@ -392,6 +390,8 @@ Conditions:
       - !Equals [ !Ref 'KubernetesVersion', '1.13' ]
   MNGLBL: !Equals [ !Ref 'MangedNodeGroupLabel', '' ]
 Mappings:
+  Config:
+    Prefix: { Value: 'eks-quickstart' }
   K8sVersionMap:
     "1.13":
       BinaryPath: 1.13.8/2019-08-14/bin/linux/amd64
@@ -793,7 +793,7 @@ Resources:
     Condition: CleanupSGs
     Type: Custom::Cleanup
     Properties:
-      ServiceToken: !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${SharedResourcesPrefix}-CleanupSecurityGroupDependencies'
+      ServiceToken: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-CleanupSecurityGroupDependencies', {Prefix: !FindInMap [Config, Prefix, Value]}]
       SecurityGroups:
         - !If
           - DisableManagedNodeGroup
@@ -864,7 +864,7 @@ Resources:
     Condition: EnableManagedNodeGroup
     Type: Custom::NodeSG
     Properties:
-      ServiceToken: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${SharedResourcesPrefix}-NodeSG"
+      ServiceToken: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-NodeSG", {Prefix: !FindInMap [Config, Prefix, Value]}]
       ClusterName: !Ref EKSControlPlane
       NodeGroupName: !GetAtt EKSNodegroup.NodegroupName
   NodeGroup:
