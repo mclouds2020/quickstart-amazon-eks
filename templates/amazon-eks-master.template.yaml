@@ -57,7 +57,6 @@ Metadata:
           - KubernetesVersion
           - EKSPublicAccessEndpoint
           - EKSPublicAccessCIDRs
-          - EKSPrivateAccessEndpoint
           - EKSClusterLoggingTypes
           - EKSEncryptSecrets
           - EKSEncryptSecretsKmsKeyArn
@@ -158,8 +157,6 @@ Metadata:
         default: Number of Availability Zones
       ProvisionBastionHost:
         default: Provision bastion host
-      EKSPrivateAccessEndpoint:
-        default: EKS private access endpoint
       EKSPublicAccessEndpoint:
         default: EKS public access endpoint
       EKSPublicAccessCIDRs:
@@ -279,12 +276,6 @@ Parameters:
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
     Description: Configure access to the Kubernetes API server endpoint from outside of your VPC.
-  EKSPrivateAccessEndpoint:
-    Type: String
-    AllowedValues: [Enabled, Disabled]
-    Default: Enabled
-    Description: Configure access to the Kubernetes API server endpoint from within your VPC. If this is disabled,
-      EKSPublicAccessEndpoint must be enabled.
   EKSClusterLoggingTypes:
     Type: List<String>
     Default: "api,audit,authenticator,controllerManager,scheduler"
@@ -670,7 +661,6 @@ Resources:
         ProvisionBastionHost: !Ref ProvisionBastionHost
         EKSPublicAccessCIDRs: !Join [ ',', !Ref 'EKSPublicAccessCIDRs' ]
         EKSPublicAccessEndpoint: !Ref EKSPublicAccessEndpoint
-        EKSPrivateAccessEndpoint: !Ref EKSPrivateAccessEndpoint
         EKSClusterLoggingTypes: !Join [ ',', !Ref 'EKSClusterLoggingTypes' ]
         EKSEncryptSecrets: !Ref EKSEncryptSecrets
         EKSEncryptSecretsKmsKeyArn: !Ref EKSEncryptSecretsKmsKeyArn
