@@ -3,6 +3,7 @@ Description: Deploys an EKS cluster into an existing VPC (qs-1p7nknoi6)
 Metadata:
   QSLint:
     Exclusions: [W9002, W9003, W9004, W9006]
+Transform: [QuickStartParameterResolver]
 Parameters:
   KeyPairName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -35,10 +36,6 @@ Parameters:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
-  EKSPrivateAccessEndpoint:
-    Type: String
-    AllowedValues: [Enabled, Disabled]
-    Default: Enabled
   EKSClusterLoggingTypes:
     Type: List<String>
     Default: ""
@@ -155,7 +152,7 @@ Parameters:
     Type: String
   ManagedNodeGroupAMIType:
     Description: Select one of the two AMI types for your managed node group (only applies if you chose "yes" for ManagedNodeGroup). GPU instance types should use the AL2_x86_64_GPU AMI type, which uses the Amazon EKS-optimized Linux AMI with GPU support. Non-GPU instances should use the AL2_x86_64 AMI type, which uses the Amazon EKS-optimized Linux AMI.
-    AllowedValues: [ "AL2_x86_64", " AL2_x86_64_GPU"]
+    AllowedValues: [ "AL2_x86_64", "AL2_x86_64_GPU"]
     Default: "AL2_x86_64"
     Type: String
   MangedNodeGroupLabel:
@@ -280,9 +277,12 @@ Parameters:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
+  ConfigSetName:
+    Type: String
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
+    ParameterPrefix: { Value: '/quickstart/amazon-eks' }
 Conditions:
   EnableSnyk: !Equals [ !Ref SnykIntegration, Enabled]
   EnableNewRelic: !Equals [ !Ref NewRelicIntegration, Enabled]
@@ -542,7 +542,7 @@ Resources:
         FunctionRoleArn: !GetAtt IamStack.Outputs.KubernetesAdminRoleArn
         EKSPublicAccessCIDRs: !Join [ ',', !Ref 'EKSPublicAccessCIDRs' ]
         EKSPublicAccessEndpoint: !Ref EKSPublicAccessEndpoint
-        EKSPrivateAccessEndpoint: !Ref EKSPrivateAccessEndpoint
+        EKSPrivateAccessEndpoint: ~~/<ConfigSetName>/controlplane/EKSPrivateAccessEndpoint~~
         EKSClusterLoggingTypes: !Join [ ',', !Ref 'EKSClusterLoggingTypes' ]
         EKSEncryptSecrets: !Ref EKSEncryptSecrets
         EKSEncryptSecretsKmsKeyArn: !Ref EKSEncryptSecretsKmsKeyArn

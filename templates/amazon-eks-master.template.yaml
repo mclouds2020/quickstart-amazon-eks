@@ -524,7 +524,7 @@ Parameters:
     Type: String
     AllowedValues: ['Yes', 'No']
     Default: 'Yes'
-  AdvancedConfigurationPath:
+  ConfigSetName:
     Type: String
     Default: ""
 Rules:
@@ -543,7 +543,7 @@ Rules:
           - [ '1.16', '1.15', '1.14' ]
           - !Ref 'KubernetesVersion'
 Conditions:
-  CreateAdvancedConfigWithDefaults: !Equals [!Ref AdvancedConfigurationPath, '']
+  CreateAdvancedConfigWithDefaults: !Equals [!Ref ConfigSetName, '']
   CreatePerAccountSharedResources: !Equals [!Ref PerAccountSharedResources, 'Yes']
   CreatePerRegionSharedResources: !Equals [!Ref PerRegionSharedResources, 'Yes']
   3AZDeployment: !Equals [!Ref NumberOfAZs, "3"]
@@ -683,6 +683,7 @@ Resources:
         SnykIntegration: !Ref SnykIntegration
         NewRelicLicenseKey: !Ref NewRelicLicenseKey
         NewRelicIntegration: !Ref NewRelicIntegration
+        ConfigSetName: !If [CreateAdvancedConfigWithDefaults, !Ref 'AWS::StackName', !Ref ConfigSetName]
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName

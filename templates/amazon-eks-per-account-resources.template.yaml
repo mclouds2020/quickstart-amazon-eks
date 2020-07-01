@@ -3,6 +3,7 @@ Description: Shared resources required by all Amazon EKS Quick Start stacks in t
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
+    ParameterPrefix: { Value: '/quickstart/amazon-eks' }
 Resources:
   CopyZipsRole:
     Type: AWS::IAM::Role
@@ -348,6 +349,21 @@ Resources:
                   - "iam:CreateServiceLinkedRole"
                   - "ec2:DescribeSubnets"
                 Resource: "*"
+  CloudFormationKubernetesVPCRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudFormation-Kubernetes-VPC
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaENIManagementAccess'
   ParameterResolverRole:
     Type: AWS::IAM::Role
     Properties:
@@ -373,7 +389,7 @@ Resources:
                   - 'ssm:GetParameters'
                   - 'ssm:GetParameterHistory'
                   - 'ssm:GetParameter'
-                Resource: !Sub ['arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/quickstart/${Prefix}/*', {Prefix: !FindInMap [Config, Prefix, Value]}]
+                Resource: !Sub ['arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter${ParameterPrefix}/*', {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   ParameterResolverFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -396,7 +412,7 @@ Resources:
                       obj[i] = template_iterator(v, params, ssm, prefix)
               elif isinstance(obj, str):
                   func = partial(resolver, ssm, prefix, params['params'])
-                  obj = re.sub(r'{%[\w/<>]+%}', func, obj)
+                  obj = re.sub(r'~~[\w/<>]+~~', func, obj)
               return obj
 
 
@@ -412,11 +428,11 @@ Resources:
               param = re.sub(r'<\w+>', func, param)
               try:
                   resp = ssm.get_parameter(Name=prefix + param)
+                  return json.loads(resp['Parameter']['Value'])['Value']
               except ssm.exceptions.ParameterNotFound:
                   if default is None:
                       raise Exception(f"Parameter {param} not found")
                   return default
-              return resp['Parameter']['Value']
 
 
           def param_resolve(params, match):
@@ -444,6 +460,7 @@ Resources:
                   traceback.print_exc()
                   macro_response["status"] = "failure"
                   macro_response["errorMessage"] = str(e)
+              print(json.dumps(macro_response))
               return macro_response
       Handler: index.handler
       Runtime: python3.7

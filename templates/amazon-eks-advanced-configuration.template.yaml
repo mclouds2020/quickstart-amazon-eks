@@ -18,6 +18,9 @@ Parameters:
   EKSEncryptSecretsKmsKeyArn:
     Type: String
     Default: ""
+Mappings:
+  Config:
+    ParameterPrefix: { Value: '/quickstart/amazon-eks' }
 Resources:
   EKSPrivateAccessEndpointParameter:
     Type: AWS::SSM::Parameter
@@ -27,7 +30,7 @@ Resources:
         {
           "Value": "${EKSPrivateAccessEndpoint}"
         }
-      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSPrivateAccessEndpoint"
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSPrivateAccessEndpoint", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSClusterLoggingTypesParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -36,7 +39,7 @@ Resources:
         {
           "Value": "${EKSClusterLoggingTypes}"
         }
-      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSClusterLoggingTypes"
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSClusterLoggingTypes", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSEncryptSecretsParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -45,7 +48,7 @@ Resources:
         {
           "Value": "${EKSEncryptSecrets}"
         }
-      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSEncryptSecrets"
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSEncryptSecrets", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSEncryptSecretsKmsKeyArnParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -54,4 +57,4 @@ Resources:
         {
           "Value": "${EKSEncryptSecretsKmsKeyArn}"
         }
-      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSEncryptSecretsKmsKeyArn"
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSEncryptSecretsKmsKeyArn", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
