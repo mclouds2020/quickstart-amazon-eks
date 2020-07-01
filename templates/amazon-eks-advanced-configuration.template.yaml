@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates SSM parameters that set advanced options for the Amazon EKS Quick Start.
+Parameters:
+  ConfigSetName:
+    Type: String
+    Description: Name for the config set, the same name must be used when launching the main EKS Quick Start.
+  EKSPrivateAccessEndpoint:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Enabled
+  EKSClusterLoggingTypes:
+    Type: String
+    Default: ""
+  EKSEncryptSecrets:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Enabled
+  EKSEncryptSecretsKmsKeyArn:
+    Type: String
+    Default: ""
+Resources:
+  EKSPrivateAccessEndpointParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub >
+        {
+          "Value": "${EKSPrivateAccessEndpoint}"
+        }
+      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSPrivateAccessEndpoint"
+  EKSClusterLoggingTypesParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub >
+        {
+          "Value": "${EKSClusterLoggingTypes}"
+        }
+      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSClusterLoggingTypes"
+  EKSEncryptSecretsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub >
+        {
+          "Value": "${EKSEncryptSecrets}"
+        }
+      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSEncryptSecrets"
+  EKSEncryptSecretsKmsKeyArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub >
+        {
+          "Value": "${EKSEncryptSecretsKmsKeyArn}"
+        }
+      Name: !Sub "/quickstart/amazon-eks/${ConfigSetName}/controlplane/EKSEncryptSecretsKmsKeyArn"

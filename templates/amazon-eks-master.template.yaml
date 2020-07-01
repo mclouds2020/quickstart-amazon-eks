@@ -524,9 +524,9 @@ Parameters:
     Type: String
     AllowedValues: ['Yes', 'No']
     Default: 'Yes'
-  SharedResourcesPrefix:
+  AdvancedConfigurationPath:
     Type: String
-    Default: eks-quickstart
+    Default: ""
 Rules:
   LablesNeedNamespaces:
     RuleCondition: !Not
@@ -543,6 +543,7 @@ Rules:
           - [ '1.16', '1.15', '1.14' ]
           - !Ref 'KubernetesVersion'
 Conditions:
+  CreateAdvancedConfigWithDefaults: !Equals [!Ref AdvancedConfigurationPath, '']
   CreatePerAccountSharedResources: !Equals [!Ref PerAccountSharedResources, 'Yes']
   CreatePerRegionSharedResources: !Equals [!Ref PerRegionSharedResources, 'Yes']
   3AZDeployment: !Equals [!Ref NumberOfAZs, "3"]
@@ -554,6 +555,16 @@ Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
 Resources:
+  AdvancedConfigDefaultsStack:
+    Type: AWS::CloudFormation::Stack
+    Condition: CreateAdvancedConfigWithDefaults
+    Properties:
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-advanced-configuration.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        ConfigSetName: !Ref AWS::StackName
   AccountSharedResources:
     Type: AWS::CloudFormation::Stack
     Condition: CreatePerAccountSharedResources
