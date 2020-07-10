@@ -518,6 +518,11 @@ Parameters:
   ConfigSetName:
     Type: String
     Default: ""
+  TestSuite:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Disabled
+    Description: Deploys a test stack that tests components of the Quick Start.
 Rules:
   LablesNeedNamespaces:
     RuleCondition: !Not
@@ -674,6 +679,7 @@ Resources:
         NewRelicLicenseKey: !Ref NewRelicLicenseKey
         NewRelicIntegration: !Ref NewRelicIntegration
         ConfigSetName: !If [CreateAdvancedConfigWithDefaults, !Ref 'AWS::StackName', !Ref ConfigSetName]
+        TestSuite: !Ref TestSuite
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName

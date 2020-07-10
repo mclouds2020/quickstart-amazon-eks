@@ -100,17 +100,15 @@ Resources:
     DependsOn: LambdaSGCleanup
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "EKS-QuickStart-KubeGet-${EKSClusterName}"
+      FunctionName: !Sub 'awsqs-kubernetes-resource-get-proxy-${EKSClusterName}'
       Handler: lambda_function.lambda_handler
       MemorySize: 256
       Role: !Ref KubernetesAdminRoleArn
       Runtime: python3.7
       Timeout: 900
-      Layers: [!Ref GetAwsCliLayerArn, !Ref GetCrhelperLayerArn, !Ref GetKubectlLayerArn]
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
-        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/KubeGet/lambda.zip'
-      Environment: { Variables: { KUBECONFIG: /tmp/.kube/config } }
+        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip'
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds

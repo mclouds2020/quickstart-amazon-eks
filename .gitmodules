@@ -18,3 +18,6 @@
 [submodule "submodules/quickstart-eks-newrelic-infrastructure"]
 	path = submodules/quickstart-eks-newrelic-infrastructure
 	url = git@github.com:aws-quickstart/quickstart-eks-newrelic-infrastructure.git
+[submodule "functions/source/kubernetesResources"]
+	path = functions/source/kubernetesResources
+	url = git@github.com:aws-quickstart/quickstart-kubernetes-resource-provider.git

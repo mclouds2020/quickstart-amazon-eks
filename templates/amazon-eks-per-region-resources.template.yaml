@@ -116,7 +116,6 @@ Resources:
       Objects:
         - functions/packages/DeleteBucketContents/lambda.zip
         - functions/packages/KubeManifest/lambda.zip
-        - functions/packages/KubeGet/lambda.zip
         - functions/packages/CleanupLoadBalancers/lambda.zip
         - functions/packages/CleanupSecurityGroupDependencies/lambda.zip
         - functions/packages/CleanupLambdas/lambda.zip
@@ -129,6 +128,8 @@ Resources:
         - functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip
         - functions/packages/awscliLayer/lambda.zip
         - functions/packages/FargateProfile/lambda.zip
+        - functions/packages/kubernetesResources/awsqs_kubernetes_get.zip
+        - functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip
   ArtifactCopyPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -147,6 +148,7 @@ Resources:
               - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}"
               - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/EksClusterResource/awsqs-eks-cluster.zip"
               - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip"
+              - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get.zip"
   KubectlLayer:
     DependsOn: CopyZips
     Type: AWS::Lambda::LayerVersion
@@ -231,7 +233,7 @@ Resources:
     Type: Custom::RegisterType
     Properties:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
-      Version: "1.0.0-beta4"
+      Version: "3.0.0-beta9"
       TypeName: "AWSQS::EKS::Cluster"
       SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/EksClusterResource/awsqs-eks-cluster.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
       IamPolicy:
@@ -256,7 +258,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
       TypeName: "AWSQS::Kubernetes::Helm"
-      Version: "1.0.0-beta4"
+      Version: "3.0.0-beta9"
       SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
       IamPolicy:
         Version: '2012-10-17'
@@ -282,6 +284,32 @@ Resources:
           - "logs:PutLogEvents"
           - "lambda:*"
           Resource: "*"
+  RegisterKubeGetType:
+    DependsOn: ArtifactCopyPolicy
+    Type: Custom::RegisterType
+    Properties:
+      ServiceToken: !GetAtt RegisterTypeFunction.Arn
+      TypeName: "AWSQS::Kubernetes::Get"
+      Version: "3.0.0-beta9"
+      SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
+      IamPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: [
+              "ec2:CreateNetworkInterface",
+              "ec2:DeleteNetworkInterface",
+              "ec2:Describe*",
+              "eks:DescribeCluster",
+              "iam:PassRole",
+              "lambda:*",
+              "ssm:GetParameter",
+              "sts:GetCallerIdentity",
+              "logs:CreateLogGroup",
+              "logs:CreateLogStream",
+              "logs:PutLogEvents"
+            ]
+            Resource: "*"
   CleanupSecurityGroupDependenciesLambda:
     Type: "AWS::Lambda::Function"
     Properties:

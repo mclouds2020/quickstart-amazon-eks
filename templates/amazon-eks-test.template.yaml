@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Test suite for EKS Quick Start
+Metadata:
+  QSLint:
+    Exclusions: [W9002, W9003, W9004, W9006]
+Parameters:
+  ClusterName:
+    Type: String
+Resources:
+  TestKubeGet:
+    Type: "AWSQS::Kubernetes::Get"
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: kube-system
+      Name: cm/aws-auth
+      JsonPath: '{.data.mapRoles}'
+Outputs:
+  TestKubeGetResponse:
+    Value: !GetAtt TestKubeGet.Response
+  TestKubeGetId:
+    Value: !GetAtt TestKubeGet.Id
+

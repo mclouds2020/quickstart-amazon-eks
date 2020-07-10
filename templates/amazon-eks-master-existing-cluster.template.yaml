@@ -103,23 +103,20 @@ Resources:
         - !Ref 'AWS::NoValue'
   KubeGetLambda:
     Type: AWS::Lambda::Function
+    Condition: EnableVpc
     Properties:
-      FunctionName: !Sub "EKS-QuickStart-KubeGet-${KubeClusterName}"
+      FunctionName: !Sub "awsqs-kubernetes-resource-get-proxy-${KubeClusterName}"
       Handler: lambda_function.lambda_handler
       MemorySize: 256
       Role: !GetAtt KubernetesAdminRole.Arn
       Runtime: python3.7
       Timeout: 900
-      Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
       Code:
         S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}KubeGet/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-      Environment: { Variables: { KUBECONFIG: /tmp/.kube/config } }
-      VpcConfig: !If
-      - EnableVpc
-      - SecurityGroupIds: [!Ref ControlPlaneSecurityGroup]
+        S3Key: !Sub ['${P}kubernetesResources/awsqs-kubernetes-get-vpc.zip', {P: !FindInMap [Config, Bucket, Key]}]
+      VpcConfig:
+        SecurityGroupIds: [!Ref ControlPlaneSecurityGroup]
         SubnetIds: !Split [",", !Ref K8sSubnetIds]
-      - !Ref 'AWS::NoValue'
 
   # custom resources
   CreateVpcRole:
@@ -132,7 +129,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt RegisterTypeFunction.Arn
       TypeName: "AWSQS::Kubernetes::Helm"
-      Version: "1.0.0-beta4"
+      Version: "3.0.0-beta9"
       SchemaHandlerPackage: !Sub
         - "s3://${BN}/${KP}"
         - BN: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]

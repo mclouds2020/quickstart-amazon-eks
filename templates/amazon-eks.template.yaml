@@ -279,11 +279,16 @@ Parameters:
     Default: Disabled
   ConfigSetName:
     Type: String
+  TestSuite:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Disabled
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
     ParameterPrefix: { Value: '/quickstart/amazon-eks' }
 Conditions:
+  DeployTestStack: !Equals [!Ref TestSuite, Enabled]
   EnableSnyk: !Equals [ !Ref SnykIntegration, Enabled]
   EnableNewRelic: !Equals [ !Ref NewRelicIntegration, Enabled]
   EnableFargate: !Not [!Equals [ !Ref FargateNamespaces, ""]]
@@ -649,6 +654,21 @@ Resources:
     Type: Custom::GenerateName
     Properties:
       ServiceToken: !GetAtt 'GenerateNameFunction.Arn'
+  TestSuite:
+    Condition: DeployTestStack
+    Type: AWS::CloudFormation::Stack
+    Metadata:
+      DependsOn:
+        - !Ref ControlPlaneSecurityGroupIngress
+        - !Ref NodeGroupStack
+        - !If [EnableFargate, !Ref FargateNamespaces, !Ref 'AWS::NoValue']
+    Properties:
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-test.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        ClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
   NewRelicStack:
     Condition: EnableNewRelic
     Type: AWS::CloudFormation::Stack
