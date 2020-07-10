@@ -156,7 +156,11 @@ tests:
       ClusterAutoScaler: Enabled
       ManagedNodeGroup: 'yes'
       ManagedNodeGroupAMIType: AL2_x86_64
-      EKSPublicAccessEndpoint: Enabled
+      EKSPublicAccessEndpoint: Disabled
       ProvisionBastionHost: Enabled
+      PerRegionSharedResources: 'No'
+      PerAccountSharedResources: 'No'
+      TestSuite: Enabled
     regions:
     - ap-south-1
+    - us-west-2

@@ -6,3 +6,4 @@
 /.taskcat
 /functions/packages
 /output
+__pycache__
