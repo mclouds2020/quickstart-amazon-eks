@@ -78,24 +78,6 @@ Resources:
         lambda list-layer-versions --layer-name ${Prefix}-AwsCli --query 'max_by(LayerVersions, &Version)'
       - Prefix: !FindInMap [Config, Prefix, Value]
       IdField: 'LayerVersionArn'
-  KubeManifestLambda:
-    DependsOn: LambdaSGCleanup
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub "EKS-QuickStart-KubeManifest-${EKSClusterName}"
-      Handler: lambda_function.lambda_handler
-      MemorySize: 256
-      Role: !Ref KubernetesAdminRoleArn
-      Runtime: python3.7
-      Timeout: 900
-      Layers: [!Ref GetAwsCliLayerArn, !Ref GetCrhelperLayerArn, !Ref GetKubectlLayerArn]
-      Code:
-        S3Bucket: !Ref LambdaZipsBucketName
-        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/KubeManifest/lambda.zip'
-      Environment: { Variables: { KUBECONFIG: /tmp/.kube/config } }
-      VpcConfig:
-        SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
-        SubnetIds: !Ref EKSSubnetIds
   KubeGetLambda:
     DependsOn: LambdaSGCleanup
     Type: AWS::Lambda::Function
@@ -109,6 +91,22 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip'
+      VpcConfig:
+        SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
+        SubnetIds: !Ref EKSSubnetIds
+  KubeApplyLambda:
+    DependsOn: LambdaSGCleanup
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'awsqs-kubernetes-resource-apply-proxy-${EKSClusterName}'
+      Handler: lambda_function.lambda_handler
+      MemorySize: 256
+      Role: !Ref KubernetesAdminRoleArn
+      Runtime: python3.7
+      Timeout: 900
+      Code:
+        S3Bucket: !Ref LambdaZipsBucketName
+        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_apply_vpc.zip'
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds

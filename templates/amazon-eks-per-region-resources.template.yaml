@@ -130,6 +130,8 @@ Resources:
         - functions/packages/FargateProfile/lambda.zip
         - functions/packages/kubernetesResources/awsqs_kubernetes_get.zip
         - functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip
+        - functions/packages/kubernetesResources/awsqs_kubernetes_apply.zip
+        - functions/packages/kubernetesResources/awsqs_kubernetes_apply_vpc.zip
   ArtifactCopyPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -149,6 +151,7 @@ Resources:
               - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/EksClusterResource/awsqs-eks-cluster.zip"
               - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/HelmReleaseResource/awsqs-kubernetes-helm.zip"
               - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get.zip"
+              - !Sub "arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_apply.zip"
   KubectlLayer:
     DependsOn: CopyZips
     Type: AWS::Lambda::LayerVersion
@@ -292,6 +295,32 @@ Resources:
       TypeName: "AWSQS::Kubernetes::Get"
       Version: "3.0.0-beta9"
       SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
+      IamPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: [
+              "ec2:CreateNetworkInterface",
+              "ec2:DeleteNetworkInterface",
+              "ec2:Describe*",
+              "eks:DescribeCluster",
+              "iam:PassRole",
+              "lambda:*",
+              "ssm:GetParameter",
+              "sts:GetCallerIdentity",
+              "logs:CreateLogGroup",
+              "logs:CreateLogStream",
+              "logs:PutLogEvents"
+            ]
+            Resource: "*"
+  RegisterKubeApplyType:
+    DependsOn: ArtifactCopyPolicy
+    Type: Custom::RegisterType
+    Properties:
+      ServiceToken: !GetAtt RegisterTypeFunction.Arn
+      TypeName: "AWSQS::Kubernetes::Resource"
+      Version: "3.0.0-beta11"
+      SchemaHandlerPackage: !Sub ["s3://${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}/${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_apply.zip", {Prefix: !FindInMap [Config, Prefix, Value]}]
       IamPolicy:
         Version: '2012-10-17'
         Statement:

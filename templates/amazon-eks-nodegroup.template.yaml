@@ -911,10 +911,8 @@ Resources:
         PauseTime: PT15M
   ConfigureProxy:
     Condition: EnableProxy
-    Type: "Custom::KubeManifest"
-    Version: '1.0'
+    Type: "AWSQS::Kubernetes::Resource"
     Properties:
-      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${EKSControlPlane}"
       HttpProxy: !Ref HttpProxy
       VpcId: !Ref VPCID
   NodeLaunchConfig:

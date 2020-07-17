@@ -14,7 +14,23 @@ Resources:
       Namespace: kube-system
       Name: cm/aws-auth
       JsonPath: '{.data.mapRoles}'
+  TestKubeApply:
+    Type: "AWSQS::Kubernetes::Resource"
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: kube-system
+      Manifest: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: cfn-apply-test
+        data:
+          this: was-made-by-cfn
 Outputs:
+  TestKubeApplyResponse:
+    Value: !GetAtt TestKubeApply.uid
+  TestKubeApplyId:
+    Value: !GetAtt TestKubeApply.resourceVersion
   TestKubeGetResponse:
     Value: !GetAtt TestKubeGet.Response
   TestKubeGetId:

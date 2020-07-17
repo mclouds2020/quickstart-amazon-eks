@@ -12,11 +12,8 @@ Resources:
   #
   # The "URL" property is an exact representation of a regular kubernetes resource manifest, available by link
   KubeManifestURLExample:
-    Type: "Custom::KubeManifest"
-    Version: '1.0'
+    Type: "AWSQS::Kubernetes::Resource"
     Properties:
-      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
-      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${KubeClusterName}"
       ClusterName: !Ref KubeClusterName
       # Kubernetes manifest URL
       Url: https://k8s.io/examples/controllers/nginx-deployment.yaml
@@ -30,11 +27,8 @@ Resources:
   # The following elements are available to be used in other cloudformation resources using !GetAtt:
   # name, namespace, resourceVersion, selfLink, uid
   KubeManifestExample:
-    Type: "Custom::KubeManifest"
-    Version: '1.0'
+    Type: "AWSQS::Kubernetes::Resource"
     Properties:
-      # The lambda function that executes the manifest against the cluster. This is created in one of the parent stacks
-      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EKS-QuickStart-KubeManifest-${KubeClusterName}"
       ClusterName: !Ref KubeClusterName
       # Kubernetes manifest
       Manifest:
