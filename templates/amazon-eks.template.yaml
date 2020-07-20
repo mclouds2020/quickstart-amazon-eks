@@ -654,7 +654,7 @@ Resources:
     Type: Custom::GenerateName
     Properties:
       ServiceToken: !GetAtt 'GenerateNameFunction.Arn'
-  TestSuite:
+  TestSuiteStack:
     Condition: DeployTestStack
     Type: AWS::CloudFormation::Stack
     Metadata:
