@@ -189,7 +189,7 @@ Parameters:
   IamOidcProvider:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]
-    Default: "Disabled"
+    Default: "Enabled"
   ProvisionALBIngressController:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]

@@ -481,7 +481,7 @@ Parameters:
   IamOidcProvider:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]
-    Default: "Disabled"
+    Default: "Enabled"
     Description: Enables IAM roles for Kubernetes service accounts.
   EKSClusterName:
     Type: String

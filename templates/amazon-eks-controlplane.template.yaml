@@ -51,7 +51,7 @@ Parameters:
   IamOidcProvider:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]
-    Default: "Disabled"
+    Default: "Enabled"
   EKSClusterName:
     Type: String
 Conditions:
