@@ -83,7 +83,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub 'awsqs-kubernetes-resource-get-proxy-${EKSClusterName}'
-      Handler: lambda_function.lambda_handler
+      Handler: awsqs_kubernetes_resource.handlers.proxy_wrap
       MemorySize: 256
       Role: !Ref KubernetesAdminRoleArn
       Runtime: python3.7
@@ -99,7 +99,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub 'awsqs-kubernetes-resource-apply-proxy-${EKSClusterName}'
-      Handler: lambda_function.lambda_handler
+      Handler: awsqs_kubernetes_resource.handlers.proxy_wrap
       MemorySize: 256
       Role: !Ref KubernetesAdminRoleArn
       Runtime: python3.7
