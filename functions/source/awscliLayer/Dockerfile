@@ -8,6 +8,7 @@ RUN mkdir -p python/ && \
     mv python/bin ./ && \
     mv python/* ./bin/ && \
     rm Dockerfile requirements.txt && \
+    find . -exec touch -t 202007010000.00 {} + && \
     zip -X -r lambda.zip ./
 
 CMD mkdir -p /output/ && mv lambda.zip /output/

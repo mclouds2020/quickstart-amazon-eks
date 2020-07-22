@@ -16,9 +16,11 @@ build:
 	cp -r scripts templates submodules output/build
 	cp -r LICENSE.txt NOTICE.txt output/build
 	if [ "$(VERSION)" != "" ] ; then \
-      sed -i "s|Default: $(PREFIX)/|Default: $(PREFIX)-versions/$(VERSION)/|g" output/build/templates/*.yaml ; \
-    fi
-	cd output/build/ && zip -X -r ../release.zip .
+	  sed -i "s|Default: $(PREFIX)/|Default: $(PREFIX)-versions/$(VERSION)/|g" output/build/templates/*.yaml ; \
+	fi
+	cd output/build/ && \
+	find . -exec touch -t 202007010000.00 {} + && \
+	zip -X -r ../release.zip .
 
 publish:
 	if [ "$(BUCKET)" == "" ] ; then \
