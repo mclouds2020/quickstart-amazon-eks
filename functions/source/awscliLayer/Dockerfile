@@ -4,7 +4,10 @@ COPY . .
 
 RUN mkdir -p python/ && \
     pip install -t python/ -r ./requirements.txt && \
-    rm -rf python/*.dist-info python/*.pth python/__pycache__ python/bin/__pycache__ && \
+    find . -name "*.dist-info"  -exec rm -rf {} \; | true && \
+    find . -name "*.egg-info"  -exec rm -rf {} \; | true && \
+    find . -name "*.pth"  -exec rm -rf {} \; | true && \
+    find . -name "__pycache__"  -exec rm -rf {} \; | true && \
     mv python/bin ./ && \
     mv python/* ./bin/ && \
     rm Dockerfile requirements.txt && \
