@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh -ex
 cd functions/source/
 for d in * ; do
     n=$(echo $d| tr '[:upper:]' '[:lower:]')
