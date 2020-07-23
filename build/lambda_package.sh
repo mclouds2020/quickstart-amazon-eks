@@ -4,9 +4,9 @@ for d in * ; do
     n=$(echo $d| tr '[:upper:]' '[:lower:]')
     cd $d
     if [ -z "$ECR_BUILD_CACHE" ]; then
-      docker build --cache-from ${ECR_BUILD_CACHE}:$n -t $n .
-    else
       docker build -t $n .
+    else
+      docker build --cache-from ${ECR_BUILD_CACHE}:$n -t $n .
     fi
     docker rm $n > /dev/null 2>&1 || true
     docker run -i --name $n $n
