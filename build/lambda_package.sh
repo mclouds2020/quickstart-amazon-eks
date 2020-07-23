@@ -3,7 +3,11 @@ cd functions/source/
 for d in * ; do
     n=$(echo $d| tr '[:upper:]' '[:lower:]')
     cd $d
-    docker build ${DOCKER_BUILD_ARGS} -t $n .
+    if [ -z "$ECR_BUILD_CACHE" ]; then
+      docker build --cache-from ${ECR_BUILD_CACHE}:$n -t $n .
+    else
+      docker build -t $n .
+    fi
     docker rm $n > /dev/null 2>&1 || true
     docker run -i --name $n $n
     mkdir -p ../../packages/$d/
