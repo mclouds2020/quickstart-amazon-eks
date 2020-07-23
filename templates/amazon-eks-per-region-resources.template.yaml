@@ -83,7 +83,7 @@ Resources:
               for o in objects:
                   key = prefix + o
                   copy_source = {'Bucket': source_bucket, 'Key': key}
-                  logging.info(f'copy_source: {copy_source}\ndest_bucket: {dest_bucket}\nkey: {key}')
+                  logger.info(f'copy_source: {copy_source}\ndest_bucket: {dest_bucket}\nkey: {key}')
                   s3.copy_object(CopySource=copy_source, Bucket=dest_bucket, Key=key)
           def delete_objects(bucket, prefix, objects):
               s3 = boto3.client('s3')
@@ -103,7 +103,7 @@ Resources:
                       copy_objects(event['ResourceProperties']['SourceBucket'], event['ResourceProperties']['DestBucket'],
                                    event['ResourceProperties']['Prefix'], event['ResourceProperties']['Objects'])
               except Exception:
-                  logging.error('Unhandled exception', exc_info=True)
+                  logger.error('Unhandled exception', exc_info=True)
                   status = cfnresponse.FAILED
               finally:
                   cfnresponse.send(event, context, status, {}, None)
@@ -116,7 +116,6 @@ Resources:
       Prefix: !Ref 'QSS3KeyPrefix'
       Objects:
         - functions/packages/DeleteBucketContents/lambda.zip
-        - functions/packages/KubeManifest/lambda.zip
         - functions/packages/CleanupLoadBalancers/lambda.zip
         - functions/packages/CleanupSecurityGroupDependencies/lambda.zip
         - functions/packages/CleanupLambdas/lambda.zip
