@@ -1,15 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Prepare an existing EKS cluster (qs-1p817r5f9)"
 Metadata:
-  LintSpellExclude: [Security Group, Subnet IDs]
+  LintSpellExclude: [Security Group, Subnet IDs, No, vpc]
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
           default: EKS cluster details
         Parameters:
           - KubeClusterName
+          - VPCID
           - K8sSubnetIds
           - ControlPlaneSecurityGroup
+          - PerAccountSharedResources
+          - PerRegionSharedResources
+          - QSS3BucketName
+          - QSS3KeyPrefix
+          - QSS3BucketRegion
     ParameterLabels:
       KubeClusterName:
         default: EKS cluster name
@@ -17,6 +23,12 @@ Metadata:
         default: EKS Security Group
       K8sSubnetIds:
         default: EKS Subnet IDs
+      PerAccountSharedResources:
+        default: Deploy account level shared resources
+      PerRegionSharedResources:
+        default: Deploy region level shared resources
+      VPCID:
+        default: VPC ID
 Parameters:
   KubeClusterName:
     Type: String
@@ -29,246 +41,109 @@ Parameters:
     Type: String
     Default: ""
     Description: '[Optional] Security Group ID attached to the EKS cluster. Must have allow outbound access to the Kubernetes, CloudFormation and EKS endpoints. Leave blank for publicly accessible clusters.'
+  PerAccountSharedResources:
+    Type: String
+    AllowedValues: ['Yes', 'No']
+    Default: 'Yes'
+    Description: Choose "No" if you have already deployed the EKS account shared resources in this AWS account.
+  PerRegionSharedResources:
+    Type: String
+    AllowedValues: ['Yes', 'No']
+    Default: 'Yes'
+    Description: Choose "No" if you have already deployed the EKS regional shared resources stack in this Region.
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC that contains your EKS cluster (e.g., vpc-0343606e).
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: quickstart-amazon-eks/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
+      hosted. When using your own bucket, you must specify this value.
+    Type: String
 Conditions:
-  EnableVpc: !Not [!Equals [!Ref K8sSubnetIds, '']]
+  CreatePerAccountSharedResources: !Equals [!Ref PerAccountSharedResources, 'Yes']
+  CreatePerRegionSharedResources: !Equals [!Ref PerRegionSharedResources, 'Yes']
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
 Mappings:
   Config:
+    Prefix: { Value: 'eks-quickstart' }
     Bucket:
       Bucket: 'aws-quickstart'
       Key: 'quickstart-amazon-eks/functions/packages/'
 Resources:
-  AwsCliLayer:
-    Type: AWS::Lambda::LayerVersion
+  AccountSharedResources:
+    Type: AWS::CloudFormation::Stack
+    Condition: CreatePerAccountSharedResources
+    DeletionPolicy: Retain
     Properties:
-      Content:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}awscliLayer/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-  KubectlLayer:
-    Type: AWS::Lambda::LayerVersion
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-account-resources.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: AccountSharedResources}]
+  RegionalSharedResources:
+    Type: AWS::CloudFormation::Stack
+    Condition: CreatePerRegionSharedResources
+    DeletionPolicy: Retain
+    Metadata:
+      DependsOn: !If [CreatePerAccountSharedResources, !Ref AccountSharedResources, !Ref 'AWS::NoValue']
     Properties:
-      Content:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}kubectlLayer/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-  CrhelperLayer:
-    Type: AWS::Lambda::LayerVersion
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-region-resources.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+      Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: RegionalSharedResources}]
+  IamStack:
+    Type: "AWS::CloudFormation::Stack"
     Properties:
-      CompatibleRuntimes:
-        - python3.6
-        - python3.7
-      Content:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}crhelperLayer/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-  CreateVpcRoleLambda:
-    Type: "AWS::Lambda::Function"
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-iam.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        CreateBastionRole: "Disabled"
+        BastionIAMRoleName: ""
+  FunctionStack:
+    Type: "AWS::CloudFormation::Stack"
     Properties:
-      Handler: lambda_function.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt CreateVpcRoleRole.Arn
-      Layers: [!Ref CrhelperLayer]
-      Runtime: python3.7
-      Timeout: 900
-      Code:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}createVpcRole/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-  RegisterTypeFunction:
-    Type: "AWS::Lambda::Function"
-    Properties:
-      Handler: lambda_function.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt RegisterTypeRole.Arn
-      Layers: [!Ref CrhelperLayer]
-      Runtime: python3.7
-      Timeout: 900
-      Code:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}registerType/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-  KubeManifestLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub "EKS-QuickStart-KubeManifest-${KubeClusterName}"
-      Handler: lambda_function.lambda_handler
-      MemorySize: 256
-      Role: !GetAtt KubernetesAdminRole.Arn
-      Runtime: python3.7
-      Timeout: 900
-      Layers: [!Ref KubectlLayer, !Ref CrhelperLayer, !Ref AwsCliLayer]
-      Code:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}KubeManifest/lambda.zip', {P: !FindInMap [Config, Bucket, Key]}]
-      Environment: { Variables: { KUBECONFIG: /tmp/.kube/config } }
-      VpcConfig: !If
-        - EnableVpc
-        - SecurityGroupIds: [!Ref ControlPlaneSecurityGroup]
-          SubnetIds: !Split [",", !Ref K8sSubnetIds]
-        - !Ref 'AWS::NoValue'
-  KubeGetLambda:
-    Type: AWS::Lambda::Function
-    Condition: EnableVpc
-    Properties:
-      FunctionName: !Sub "awsqs-kubernetes-resource-get-proxy-${KubeClusterName}"
-      Handler: lambda_function.lambda_handler
-      MemorySize: 256
-      Role: !GetAtt KubernetesAdminRole.Arn
-      Runtime: python3.7
-      Timeout: 900
-      Code:
-        S3Bucket: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-        S3Key: !Sub ['${P}kubernetesResources/awsqs-kubernetes-get-vpc.zip', {P: !FindInMap [Config, Bucket, Key]}]
-      VpcConfig:
-        SecurityGroupIds: [!Ref ControlPlaneSecurityGroup]
-        SubnetIds: !Split [",", !Ref K8sSubnetIds]
-
-  # custom resources
-  CreateVpcRole:
-    Type: Custom::CreateVpcRole
-    Properties:
-      ServiceToken: !GetAtt CreateVpcRoleLambda.Arn
-      Partition: !Ref "AWS::Partition"
-  RegisterHelmType:
-    Type: Custom::RegisterType
-    Properties:
-      ServiceToken: !GetAtt RegisterTypeFunction.Arn
-      TypeName: "AWSQS::Kubernetes::Helm"
-      Version: "3.0.0-beta9"
-      SchemaHandlerPackage: !Sub
-        - "s3://${BN}/${KP}"
-        - BN: !Sub ['${P}-${AWS::Region}', {P: !FindInMap [Config, Bucket, Bucket]}]
-          KP: !Sub ['${P}HelmReleaseResource/awsqs-kubernetes-helm.zip', {P: !FindInMap [Config, Bucket, Key]}]
-      IamPolicy:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - "secretsmanager:GetSecretValue"
-              - "kms:Decrypt"
-              - "eks:DescribeCluster"
-              - "s3:GetObject"
-              - "sts:AssumeRole"
-              - "iam:PassRole"
-              - "iam:ListRolePolicies"
-              - "iam:ListAttachedRolePolicies"
-              - "iam:GetRole"
-              - "iam:GetPolicy"
-              - "iam:GetPolicyVersion"
-              - "ec2:CreateNetworkInterface"
-              - "ec2:DeleteNetworkInterface"
-              - "ec2:Describe*"
-              - "logs:CreateLogGroup"
-              - "logs:CreateLogStream"
-              - "logs:PutLogEvents"
-              - "lambda:*"
-            Resource: "*"
-
-  # IAM resources
-  CreateVpcRoleRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-      Policies:
-        - PolicyName: create-role
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: "iam:CreateRole"
-                Resource: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/CloudFormation-Kubernetes-VPC'
-              - Effect: Allow
-                Action: "iam:AttachRolePolicy"
-                Resource: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/CloudFormation-Kubernetes-VPC'
-                Condition:
-                  ArnEquals:
-                    "iam:PolicyARN":
-                      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaENIManagementAccess'
-                      - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-  KubernetesAdminRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: eksStackPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - cloudformation:*
-                  - eks:*
-                  - ec2:DescribeSecurityGroups
-                  - ec2:DescribeSubnets
-                  - ec2:DescribeVpcs
-                  - lambda:InvokeFunction
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - ec2:CreateNetworkInterface
-                  - ec2:DescribeNetworkInterfaces
-                  - ec2:DeleteNetworkInterface
-                Resource:
-                  - "*"
-              - Effect: Allow
-                Action:
-                  - lambda:AddPermission
-                  - lambda:RemovePermission
-                Resource:  "*"
-              - Effect: Allow
-                Action:
-                  - events:PutRule
-                  - events:DeleteRule
-                  - events:PutTargets
-                  - events:RemoveTargets
-                Resource:  "*"
-  RegisterTypeRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-      Policies:
-        - PolicyName: ResourceTypePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - "cloudformation:*"
-                  - "iam:PassRole"
-                  - "iam:CreateRole"
-                  - "iam:CreatePolicy"
-                  - "iam:ListPolicyVersions"
-                  - "iam:DeletePolicyVersion"
-                  - "iam:CreatePolicyVersion"
-                  - "iam:AttachRolePolicy"
-                  - "ssm:GetParameter"
-                  - "ssm:PutParameter"
-                  - "sts:GetCallerIdentity"
-                Resource: "*"
-
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-functions.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        LambdaZipsBucketName: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        KubernetesAdminRoleArn: !GetAtt IamStack.Outputs.KubernetesAdminRoleArn
+        ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
+        VPCID: !Ref VPCID
+        EKSSubnetIds: !Ref K8sSubnetIds
+        EKSClusterName: !Ref KubeClusterName
 Outputs:
   EKSAdminRoleArn:
-    Value: !GetAtt KubernetesAdminRole.Arn
+    Value: !GetAtt IamStack.Outputs.KubernetesAdminRoleArn
   HelmRoleArn:
     Value: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/awsqs-kubernetes-helm"
