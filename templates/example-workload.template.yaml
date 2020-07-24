@@ -25,7 +25,7 @@ Resources:
   # `kubectl create --save-config` is called, on stack update `kubectl apply` and on stack delete `kubectl delete`
   #
   # The following elements are available to be used in other cloudformation resources using !GetAtt:
-  # name, namespace, resourceVersion, selfLink, uid
+  # Name, Namespace, ResourceVersion, SelfLink, Uid
   KubeManifestExample:
     Type: "AWSQS::Kubernetes::Resource"
     Properties:

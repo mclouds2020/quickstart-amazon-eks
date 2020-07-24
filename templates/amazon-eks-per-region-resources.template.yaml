@@ -132,6 +132,8 @@ Resources:
         - functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip
         - functions/packages/kubernetesResources/awsqs_kubernetes_apply.zip
         - functions/packages/kubernetesResources/awsqs_kubernetes_apply_vpc.zip
+        - functions/packages/KubeManifest/lambda.zip
+        - functions/packages/KubeGet/lambda.zip
   ArtifactCopyPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
