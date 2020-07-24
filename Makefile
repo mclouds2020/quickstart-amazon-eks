@@ -8,10 +8,13 @@ PREFIX ?= quickstart-amazon-eks
 PROFILE ?= default
 GH_RELEASE ?= false
 PART ?= patch
+BUILD_FUNCTIONS ?= true
 
 build:
 	mkdir -p output/build/functions
-	build/lambda_package.sh
+	if [ "$(BUILD_FUNCTIONS)" == "true" ] ; then \
+	  build/lambda_package.sh ; \
+	fi
 	cp -r functions/packages output/build/functions/
 	cp -r scripts templates submodules output/build
 	cp -r LICENSE.txt NOTICE.txt output/build
