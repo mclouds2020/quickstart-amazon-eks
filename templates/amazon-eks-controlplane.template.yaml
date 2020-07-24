@@ -125,6 +125,10 @@ Resources:
           - Arn: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/awsqs-kubernetes-resource"
             Username: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/awsqs-kubernetes-resource"
             Groups: [ 'system:masters' ]
+          # We don't know whether GetCallerArn returned a user arn or a role arn, so we just add it to both
+          - Arn: !GetAtt CallerArn.Arn
+            Username: !GetAtt CallerArn.Arn
+            Groups: [ 'system:masters' ]
           - !If
             - BastionRole
             - Arn: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${BastionRole}"
@@ -138,6 +142,7 @@ Resources:
               Groups: [ 'system:masters' ]
             - !Ref 'AWS::NoValue'
         Users:
+          # We don't know whether GetCallerArn returned a user arn or a role arn, so we just add it to both
           - Arn: !GetAtt CallerArn.Arn
             Username: !GetAtt CallerArn.Arn
             Groups: [ 'system:masters' ]
