@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploys an EKS cluster into an existing VPC (qs-1p7nknoi6)
+Transform: [QuickStartParameterResolver]
 Metadata:
   QSLint:
     Exclusions: [W9002, W9003, W9004, W9006]
-Transform: [QuickStartParameterResolver]
 Parameters:
   KeyPairName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -623,7 +623,6 @@ Resources:
     Condition: GenerateClusterName
     Type: AWS::Lambda::Function
     Properties:
-      Description: Copies objects from a source S3 bucket to a destination
       Handler: index.handler
       Runtime: python3.7
       Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-CopyZips", {Prefix: !FindInMap [Config, Prefix, Value]}]
