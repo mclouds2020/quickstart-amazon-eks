@@ -420,7 +420,7 @@ Resources:
     Properties:
       FunctionName: !Sub ['${Prefix}-FargateProfile', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Handler: lambda_function.lambda_handler
-      MemorySize: 128
+      MemorySize: 512
       Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-FargateProfile", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Runtime: python3.7
       Timeout: 900
