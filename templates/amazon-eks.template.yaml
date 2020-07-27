@@ -669,6 +669,7 @@ Resources:
       Parameters:
         ClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
   NewRelicStack:
+    DependsOn: FunctionStack
     Condition: EnableNewRelic
     Type: AWS::CloudFormation::Stack
     Metadata:
@@ -685,6 +686,7 @@ Resources:
         KubeClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
         NewRelicLicenseKey: !Ref NewRelicLicenseKey
   SnykStack:
+    DependsOn: FunctionStack
     Condition: EnableSnyk
     Type: AWS::CloudFormation::Stack
     Metadata:
