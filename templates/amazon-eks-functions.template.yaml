@@ -26,9 +26,14 @@ Parameters:
     Type: List<String>
   EKSClusterName:
     Type: String
+  HttpProxy:
+    Type: String
+    Default: ""
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
+Conditions:
+  NoProxy: !Equals [!Ref HttpProxy, '']
 Resources:
   LambdaSGCleanup:
     Type: Custom::LambdaSGCleanup
@@ -91,6 +96,11 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip'
+      Environment:
+        Variables:
+          KUBECONFIG: /tmp/.kube/config
+          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
