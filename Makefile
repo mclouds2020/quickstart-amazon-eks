@@ -9,6 +9,7 @@ PROFILE ?= default
 GH_RELEASE ?= false
 PART ?= patch
 BUILD_FUNCTIONS ?= true
+ACL ?= 'private'
 
 build:
 	mkdir -p output/build/functions
@@ -45,9 +46,9 @@ publish:
 		fi ; \
 	fi
 	if [ "$(VERSION)" == "" ] ; then \
-		cd output/build && aws s3 sync --delete --profile $(PROFILE) --region $(REGION) ./ s3://$(BUCKET)/$(PREFIX)/ ; \
+	  cd output/build && ../../build/s3_sync.py $(BUCKET) $(REGION) $(PROFILE) $(PREFIX)/ ./ $(ACL) ; \
 	else \
-	    cd output/build && aws s3 sync --delete --profile $(PROFILE) --region $(REGION) ./ s3://$(BUCKET)/$(PREFIX)-versions/$(VERSION)/ ; \
+	  cd output/build && ../../build/s3_sync.py $(BUCKET) $(REGION) $(PROFILE) $(PREFIX)-versions/ ./ $(ACL) ; \
 	fi
 
 clean:
