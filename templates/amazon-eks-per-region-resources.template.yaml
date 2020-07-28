@@ -134,6 +134,7 @@ Resources:
         - functions/packages/kubernetesResources/awsqs_kubernetes_apply_vpc.zip
         - functions/packages/KubeManifest/lambda.zip
         - functions/packages/KubeGet/lambda.zip
+        - functions/packages/ResourceReader/lambda.zip
   ArtifactCopyPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -434,93 +435,13 @@ Resources:
       MemorySize: 512
       FunctionName: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-ResourceReader', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Description: Performs an AWS CLI command and returns the json result. Used to get the state of existing resources.
-      Handler: index.handler
+      Handler: lambda.handler
       Runtime: python3.7
       Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-ResourceReader", {Prefix: !FindInMap [Config, Prefix, Value]}]
       Timeout: 900
       Code:
-        ZipFile: |
-          import cfnresponse
-          from urllib.request import Request, urlopen
-          from urllib.error import URLError
-          import shutil
-          import tempfile
-          import logging
-          from zipfile import ZipFile
-          import subprocess
-          import shlex
-          from pathlib import Path
-          import json
-          from time import sleep
-          logger = logging.getLogger(__name__)
-          logger.setLevel(logging.DEBUG)
-          message = ''
-          code = ''
-          retries = 10
-          def run_command(command):
-              code = 0
-              try:
-                  logger.debug("executing command: %s" % command)
-                  output = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT).decode("utf-8")
-                  logging.debug(output)
-              except subprocess.CalledProcessError as exc:
-                  code = exc.returncode
-                  output = exc.output.decode("utf-8")
-                  logger.error("Command failed [exit %s]: %s" % (exc.returncode, exc.output.decode("utf-8")))
-              return code, output
-          while True:
-              if retries < 1:
-                  raise Exception("Failed to fetch the aws cli after 10 retries")
-              retries -= 1
-              req = Request("https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip")
-              try:
-                  with urlopen(req) as response:
-                     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                          shutil.copyfileobj(response, tmp_file)
-                  with ZipFile(tmp_file.name) as zip:
-                      zip.extractall('/tmp/cli-install/')
-                  run_command('chmod +x /tmp/cli-install/aws/dist/aws')
-                  run_command('chmod +x /tmp/cli-install/aws/install')
-                  c, r = run_command('/tmp/cli-install/aws/install -b /tmp/bin -i /tmp/aws-cli')
-                  if c != 0:
-                      raise Exception(f"Failed to install cli. Code: {c} Message: {r}")
-                  break
-              except URLError as e:
-                  if hasattr(e, 'reason'):
-                      logger.error('Fetching url failed: ', e.reason)
-                      message = e.reason
-                  elif hasattr(e, 'code'):
-                      logger.error('Error code: ', e.code)
-                      code = e.code
-                  else:
-                      logger.error(e)
-          def execute_cli(properties):
-              code, response = run_command(f"/tmp/bin/aws {properties['AwsCliCommand']} --output json")
-              if code != 0 and ('NotFound' in response or 'does not exist' in response):
-                  return None
-              if code != 0:
-                  raise Exception(response)
-              return json.loads(response)
-          def handler(event, context):
-              logger.debug(event)
-              status = cfnresponse.SUCCESS
-              pid = 'None'
-              resp = {}
-              try:
-                  if event['RequestType'] != 'Delete':
-                      while not Path("/tmp/bin/aws").is_file():
-                          print("waiting for cli install to complete")
-                          sleep(10)
-                      resp = execute_cli(event['ResourceProperties'])
-                      if 'IdField' in event['ResourceProperties'] and isinstance(resp, dict):
-                          pid = resp[event['ResourceProperties']['IdField']]
-                      else:
-                          pid = str(resp)
-              except Exception:
-                  logging.error('Unhandled exception', exc_info=True)
-                  status = cfnresponse.FAILED
-              finally:
-                  cfnresponse.send(event, context, status, resp, pid)
+        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
+        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/ResourceReader/lambda.zip'
   ParameterResolverFunction:
     Type: AWS::Lambda::Function
     Properties:
