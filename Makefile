@@ -45,9 +45,9 @@ publish:
 		fi ; \
 	fi
 	if [ "$(VERSION)" == "" ] ; then \
-		cd output/build && aws s3 sync --delete --size-only --profile $(PROFILE) --region $(REGION) ./ s3://$(BUCKET)/$(PREFIX)/ ; \
+		cd output/build && aws s3 sync --delete --profile $(PROFILE) --region $(REGION) ./ s3://$(BUCKET)/$(PREFIX)/ ; \
 	else \
-	    cd output/build && aws s3 sync --delete --size-only --profile $(PROFILE) --region $(REGION) ./ s3://$(BUCKET)/$(PREFIX)-versions/$(VERSION)/ ; \
+	    cd output/build && aws s3 sync --delete --profile $(PROFILE) --region $(REGION) ./ s3://$(BUCKET)/$(PREFIX)-versions/$(VERSION)/ ; \
 	fi
 
 clean:
