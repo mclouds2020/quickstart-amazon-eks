@@ -30,6 +30,7 @@ Resources:
     Type: "AWSQS::Kubernetes::Resource"
     Properties:
       ClusterName: !Ref KubeClusterName
+      Namespace: kube-system
       # Kubernetes manifest
       Manifest:
         apiVersion: v1
@@ -40,8 +41,6 @@ Resources:
           #
           # name: test
           #
-          # if namespace is not specified, "default" namespace will be used
-          namespace: kube-system
         data:
           # examples of consuming outputs of the HelmExample resource below's output. Creates an implicit dependency, so
           # this resource will only launch once the HelmExample resource has completed successfully

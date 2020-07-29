@@ -140,6 +140,7 @@ Resources:
     Type: "AWSQS::Kubernetes::Resource"
     Properties:
       ClusterName: !Ref ClusterName
+      Namespace: kube-system
       Manifest: |
         apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRole
@@ -185,6 +186,7 @@ Resources:
       - ALBServiceAccount
     Properties:
       ClusterName: !Ref ClusterName
+      Namespace: kube-system
       Manifest: |
         apiVersion: rbac.authorization.k8s.io/v1
         kind: ClusterRoleBinding
@@ -204,6 +206,7 @@ Resources:
     Type: "AWSQS::Kubernetes::Resource"
     Properties:
       ClusterName: !Ref ClusterName
+      Namespace: kube-system
       Manifest: !Sub |
         apiVersion: v1
         kind: ServiceAccount
@@ -213,12 +216,12 @@ Resources:
           annotations:
             eks.amazonaws.com/role-arn: ${ALBIngressIAMRole.Arn}
           name: alb-ingress-controller
-          namespace: kube-system
   ALBDeployment:
     Type: "AWSQS::Kubernetes::Resource"
     DependsOn: ALBServiceAccount
     Properties:
       ClusterName: !Ref ClusterName
+      Namespace: kube-system
       Manifest: !Sub |
          apiVersion: apps/v1
          kind: Deployment
@@ -226,7 +229,6 @@ Resources:
            labels:
              app.kubernetes.io/name: alb-ingress-controller
            name: alb-ingress-controller
-           namespace: kube-system
          spec:
            selector:
              matchLabels:
