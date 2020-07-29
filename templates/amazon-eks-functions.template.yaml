@@ -117,6 +117,11 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_apply_vpc.zip'
+      Environment:
+        Variables:
+          KUBECONFIG: /tmp/.kube/config
+          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
@@ -133,7 +138,11 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/KubeManifest/lambda.zip'
-      Environment: { Variables: { KUBECONFIG: /tmp/.kube/config } }
+      Environment:
+        Variables:
+          KUBECONFIG: /tmp/.kube/config
+          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
       VpcConfig:
         SecurityGroupIds: [!Ref ControlPlaneSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
@@ -147,7 +156,11 @@ Resources:
       Runtime: python3.7
       Timeout: 900
       Layers: [!Ref GetKubectlLayerArn, !Ref GetCrhelperLayerArn, !Ref GetAwsCliLayerArn]
-      Environment: { Variables: { KUBECONFIG: /tmp/.kube/config } }
+      Environment:
+        Variables:
+          KUBECONFIG: /tmp/.kube/config
+          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/KubeGet/lambda.zip'
