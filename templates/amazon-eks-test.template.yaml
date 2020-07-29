@@ -35,4 +35,3 @@ Outputs:
     Value: !GetAtt TestKubeGet.Response
   TestKubeGetId:
     Value: !GetAtt TestKubeGet.Id
-
