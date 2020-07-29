@@ -28,9 +28,9 @@ Resources:
           this: was-made-by-cfn
 Outputs:
   TestKubeApplyResponse:
-    Value: !GetAtt TestKubeApply.uid
+    Value: !GetAtt TestKubeApply.Uid
   TestKubeApplyId:
-    Value: !GetAtt TestKubeApply.resourceVersion
+    Value: !GetAtt TestKubeApply.ResourceVersion
   TestKubeGetResponse:
     Value: !GetAtt TestKubeGet.Response
   TestKubeGetId:
