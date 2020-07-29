@@ -430,6 +430,7 @@ Resources:
         S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/FargateProfile/lambda.zip'
   ResourceReaderFunction:
+    DependsOn: CopyZips
     Type: AWS::Lambda::Function
     Properties:
       MemorySize: 512
