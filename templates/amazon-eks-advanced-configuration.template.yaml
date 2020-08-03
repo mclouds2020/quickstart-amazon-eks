@@ -8,53 +8,315 @@ Parameters:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Enabled
+    Description: Configure access to the Kubernetes API server endpoint from within your VPC. If this is disabled,
+      EKSPublicAccessEndpoint must be enabled.
   EKSClusterLoggingTypes:
-    Type: String
-    Default: ""
+    Type: List<String>
+    Default: "api,audit,authenticator,controllerManager,scheduler"
+    AllowedPattern: "^(api|audit|authenticator|controllerManager|scheduler|,)*$"
+    ConstraintDescription: Valid logging types are api, audit, authenticator, controllerManager, scheduler.
+    Description: EKS cluster control plane logs to be exported to CloudWatch Logs.
   EKSEncryptSecrets:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Enabled
+    Description: Envelope encryption of Kubernetes secrets using KMS.
   EKSEncryptSecretsKmsKeyArn:
     Type: String
     Default: ""
+    Description: "[OPTIONAL] KMS key to use for envelope encryption of Kubernetes secrets. If this parameter is omitted
+      A key will be created for the cluster. The CMK must be symmetric, created in the same region as the cluster, and
+      if the CMK was created in a different account, the user must have access to the CMK."
+  NodeAMIOS:
+    AllowedValues:
+      - Amazon-Linux-HVM
+      - SUSE-SLES-15-HVM
+    Default: Amazon-Linux-HVM
+    Type: String
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: quickstart-amazon-eks/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
+      hosted. When using your own bucket, you must specify this value.
+    Type: String
+  LambdaZipsBucketName:
+    Description: '[OPTIONAL] The name of the S3 bucket where the Lambda zip files should be placed. If you leave this parameter blank, an S3 bucket will be created.'
+    Type: String
+    Default: ''
+  EKSPublicAccessCIDRs:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
+    Description: The public CIDR IP ranges that are permitted to access the Kubernetes API. These values are only used
+      if EKSPublicAccessEndpoint is enabled. Can't contain private IP ranges.
+    Type: List<String>
+    Default: 0.0.0.0/0
+  NodeGroupName:
+    Default: Default
+    Description: The name for EKS node group.
+    Type: String
+  NodeVolumeSize:
+    Default: 20
+    Description: "The size for the node's root EBS volumes."
+    Type: String
+  CustomAmiId:
+    Type: String
+    Default: ""
+    Description: "[OPTIONAL] If an AMI id is specified here it will be used in stead of the ami determined from the OS/region."
+  ManagedNodeGroupAMIType:
+    Description: Select one of the two AMI types for your managed node group (only applies if you chose "yes" for ManagedNodeGroup). GPU instance types should use the AL2_x86_64_GPU AMI type, which uses the Amazon EKS-optimized Linux AMI with GPU support. Non-GPU instances should use the AL2_x86_64 AMI type, which uses the Amazon EKS-optimized Linux AMI.
+    AllowedValues: [ "AL2_x86_64", "AL2_x86_64_GPU", ""]
+    Default: "AL2_x86_64"
+    Type: String
+  MangedNodeGroupLabel:
+    Description: Add a custom name label to the managed node group nodes. If you dont do this then a default one will be added for you.
+    Type: String
+    Default: ''
+  KubernetesVersion:
+    Type: String
+    AllowedValues: [ "1.13", "1.14", "1.15", "1.16" ]
+    Default: "1.16"
+    Description: The Kubernetes control plane version.
+  IamOidcProvider:
+    Type: String
+    AllowedValues: [ "Enabled", "Disabled" ]
+    Default: "Enabled"
+    Description: Enables IAM roles for Kubernetes service accounts.
+  BootstrapArguments:
+    Type: String
+    Default: ""
+  BastionOS:
+    Type: String
+    AllowedValues: [ "Amazon-Linux2-HVM", "Amazon-Linux-HVM", "CentOS-7-HVM", "Ubuntu-Server-14.04-LTS-HVM", "Ubuntu-Server-16.04-LTS-HVM", "SUSE-SLES-15-HVM" ]
+    Default: "Amazon-Linux2-HVM"
+  BastionBootstrapScript:
+    Default: ""
+    Type: String
+  BastionInstanceType:
+    Default: "t2.micro"
+    Type: String
+  BastionRootVolumeSize:
+    Type: Number
+    Default: 10
+  BastionIAMRoleName:
+    Type: String
+    Default: ""
+  BastionEnableTCPForwarding:
+    Type: String
+    Default: "false"
+    AllowedValues: [ "true", "false" ]
+  BastionEnableX11Forwarding:
+    Type: String
+    Default: "false"
+    AllowedValues: [ "true", "false" ]
+  BastionVariables:
+    Type: String
+    Default: ""
+  EfsPerformanceMode:
+    Type: String
+    AllowedValues: [ generalPurpose, maxIO ]
+    Default: generalPurpose
+    Description: Choose maxIO mode to provide greater IOPS with an increased latency. Only has an effect when EfsStorageClass is enabled.
+  EfsThroughputMode:
+    Type: String
+    AllowedValues: [ bursting, provisioned ]
+    Default: bursting
+    Description: Choose provisioned for throughput that is not dependent on the amount of data stored in the file system. Only has an effect when EfsStorageClass is enabled.
+  EfsProvisionedThroughputInMibps:
+    Type: Number
+    MinValue: 0
+    MaxValue: 1024
+    Default: 0
+    Description: Set to 0 if EfsThroughputMode is set to bursting. Only has an effect when EfsStorageClass is enabled. If using provisioned throughput, value must be between 0-1024.
+  TestSuite:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Disabled
+    Description: Deploys a test stack that tests components of the Quick Start.
 Mappings:
   Config:
     ParameterPrefix: { Value: '/quickstart/amazon-eks' }
 Resources:
+  LambdaZipsBucketNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${NodeAMIOS}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/quickstart-s3-asset-location/LambdaZipsBucketName", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  NodeAMIOSParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${NodeAMIOS}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/nodegroup/NodeAMIOS", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSPrivateAccessEndpointParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Type: String
-      Value: !Sub >
-        {
-          "Value": "${EKSPrivateAccessEndpoint}"
-        }
+      Value: !Sub '{ "Value": "${EKSPrivateAccessEndpoint}" }'
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSPrivateAccessEndpoint", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSClusterLoggingTypesParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Type: String
-      Value: !Sub >
-        {
-          "Value": "${EKSClusterLoggingTypes}"
-        }
+      Value: !Sub
+      - '{ "Value": "[${JoinedEKSClusterLoggingTypes}]" }'
+      - JoinedEKSClusterLoggingTypes: !Join [",", !Ref EKSClusterLoggingTypes]
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSClusterLoggingTypes", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSEncryptSecretsParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Type: String
-      Value: !Sub >
-        {
-          "Value": "${EKSEncryptSecrets}"
-        }
+      Value: !Sub '{ "Value": "${EKSEncryptSecrets}" }'
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSEncryptSecrets", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSEncryptSecretsKmsKeyArnParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Type: String
-      Value: !Sub >
-        {
-          "Value": "${EKSEncryptSecretsKmsKeyArn}"
-        }
+      Value: !Sub '{ "Value": "${EKSEncryptSecretsKmsKeyArn}" }'
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSEncryptSecretsKmsKeyArn", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  EKSPublicAccessCIDRsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub
+        - '{ "Value": "[${JoinedEKSPublicAccessCIDRs}]" }'
+        - JoinedEKSPublicAccessCIDRs: !Join [",", !Ref EKSPublicAccessCIDRs]
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSPublicAccessCIDRs", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  NodeGroupNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${NodeGroupName}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/NodeGroupName", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  NodeVolumeSizeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${NodeVolumeSize}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/NodeVolumeSize", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  CustomAmiIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${CustomAmiId}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/CustomAmiId", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  ManagedNodeGroupAMITypeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${ManagedNodeGroupAMIType}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/ManagedNodeGroupAMIType", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  MangedNodeGroupLabelParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${MangedNodeGroupLabel}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/MangedNodeGroupLabel", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  KubernetesVersionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${KubernetesVersion}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/KubernetesVersion", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  IamOidcProviderParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${IamOidcProvider}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/cluster/IamOidcProvider", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BootstrapArgumentsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BootstrapArguments}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/BootstrapArguments", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionOSParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionOS}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionOS", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionBootstrapScriptParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionBootstrapScript}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionBootstrapScript", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionInstanceTypeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionInstanceType}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionInstanceType", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionRootVolumeSizeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionRootVolumeSize}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionRootVolumeSize", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionIAMRoleNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionIAMRoleName}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionIAMRoleName", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionEnableX11ForwardingParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionEnableX11Forwarding}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionEnableX11Forwarding", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionEnableTCPForwardingParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionEnableTCPForwarding}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionEnableTCPForwarding", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  BastionVariablesParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${BastionVariables}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/bastion/BastionVariables", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  EfsPerformanceModeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${EfsPerformanceMode}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/efs/EfsPerformanceMode", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  EfsThroughputModeParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${EfsThroughputMode}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/efs/EfsThroughputMode", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  EfsProvisionedThroughputInMibpsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${EfsProvisionedThroughputInMibps}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/efs/EfsProvisionedThroughputInMibps", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  TestSuiteParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${TestSuite}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/quickstart/TestSuite", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]

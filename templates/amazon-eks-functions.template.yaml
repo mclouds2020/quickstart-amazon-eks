@@ -101,6 +101,7 @@ Resources:
           KUBECONFIG: /tmp/.kube/config
           HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
           HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          NO_PROXY: !Sub '${VPCCIDR},localhost,127.0.0.1,169.254.169.254,.internal'
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
@@ -122,6 +123,7 @@ Resources:
           KUBECONFIG: /tmp/.kube/config
           HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
           HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          NO_PROXY: !Sub '${VPCCIDR},localhost,127.0.0.1,169.254.169.254,.internal'
       VpcConfig:
         SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
@@ -143,6 +145,7 @@ Resources:
           KUBECONFIG: /tmp/.kube/config
           HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
           HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          NO_PROXY: !Sub '${VPCCIDR},localhost,127.0.0.1,169.254.169.254,.internal'
       VpcConfig:
         SecurityGroupIds: [!Ref ControlPlaneSecurityGroup]
         SubnetIds: !Ref EKSSubnetIds
@@ -161,6 +164,7 @@ Resources:
           KUBECONFIG: /tmp/.kube/config
           HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
           HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
+          NO_PROXY: !Sub '${VPCCIDR},localhost,127.0.0.1,169.254.169.254,.internal'
       Code:
         S3Bucket: !Ref LambdaZipsBucketName
         S3Key: !Sub '${QSS3KeyPrefix}functions/packages/KubeGet/lambda.zip'

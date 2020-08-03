@@ -20,6 +20,11 @@ Metadata:
     - namespace
     - Snyk
     - Security
+    - New Relic
+    - APN
+    - https://github.com/aws-quickstart/quickstart-eks-snyk/
+    - https://docs.newrelic.com/docs/accounts/install-new-relic/account-setup/license-key
+    - https://support.snyk.io/hc/en-us/articles/360003916158-Install-the-Snyk-controller-with-Helm
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -47,22 +52,12 @@ Metadata:
           - NodeInstanceType
           - NumberOfNodes
           - MaxNumberOfNodes
-          - NodeGroupName
-          - NodeVolumeSize
           - ManagedNodeGroup
-          - ManagedNodeGroupAMIType
-          - MangedNodeGroupLabel
           - AdditionalEKSAdminUserArn
           - AdditionalEKSAdminRoleArn
-          - KubernetesVersion
           - EKSPublicAccessEndpoint
-          - EKSPublicAccessCIDRs
-          - EKSClusterLoggingTypes
-          - EKSEncryptSecrets
-          - EKSEncryptSecretsKmsKeyArn
           - FargateNamespaces
           - FargateLabels
-          - IamOidcProvider
       - Label:
           default: Snyk monitor [APN security partner]
         Parameters:
@@ -79,9 +74,6 @@ Metadata:
           - ALBIngressController
           - ClusterAutoScaler
           - EfsStorageClass
-          - EfsPerformanceMode
-          - EfsThroughputMode
-          - EfsProvisionedThroughputInMibps
           - MonitoringStack
       - Label:
           default: AWS Quick Start configuration
@@ -89,7 +81,6 @@ Metadata:
           - QSS3BucketName
           - QSS3KeyPrefix
           - QSS3BucketRegion
-          - LambdaZipsBucketName
     ParameterLabels:
       AvailabilityZones:
         default: Availability Zones
@@ -122,35 +113,17 @@ Metadata:
       NumberOfNodes:
         default: Number of nodes
       MaxNumberOfNodes:
-        default: Maximum number of nodes  
-      NodeGroupName:
-        default: Node group name
-      NodeVolumeSize:
-        default: Node volume size
+        default: Maximum number of nodes
       ManagedNodeGroup:
         default: Managed node group
-      ManagedNodeGroupAMIType:
-        default: Managed node group AMI type
-      MangedNodeGroupLabel:
-        default: Managed node group label
       AdditionalEKSAdminUserArn:
         default: Additional EKS admin ARN (IAM user)
       AdditionalEKSAdminRoleArn:
         default: Additional EKS admin ARN (IAM role)
-      KubernetesVersion:
-        default: Kubernetes version
-      LambdaZipsBucketName:
-        default: Lambda zips bucket name
       ClusterAutoScaler:
         default: Cluster autoscaler
       EfsStorageClass:
         default: EFS storage class
-      EfsPerformanceMode:
-        default: EFS performance mode
-      EfsThroughputMode:
-        default: EFS throughput mode
-      EfsProvisionedThroughputInMibps:
-        default: EFS provisioned throughput in Mibps
       MonitoringStack:
         default: Monitoring stack
       NumberOfAZs:
@@ -159,22 +132,12 @@ Metadata:
         default: Provision bastion host
       EKSPublicAccessEndpoint:
         default: EKS public access endpoint
-      EKSPublicAccessCIDRs:
-        default: EKS public access CIDRs
-      EKSClusterLoggingTypes:
-        default: EKS cluster logging types
-      EKSEncryptSecrets:
-        default: Encrypt EKS secrets
-      EKSEncryptSecretsKmsKeyArn:
-        default: Encrypt EKS secrets KMS key ARN
       ALBIngressController:
         default: ALB ingress controller
       FargateNamespaces:
         default: Fargate namespaces
       FargateLabels:
         default: Fargate labels
-      IamOidcProvider:
-        default: IAM OIDC provider
       EKSClusterName:
         default: EKS cluster name
       SnykIntegrationId:
@@ -264,35 +227,11 @@ Parameters:
     Description: The CIDR IP range that is permitted to access the instances. We recommend
       that you set this value to a trusted IP range.
     Type: String
-  EKSPublicAccessCIDRs:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
-    Description: The public CIDR IP ranges that are permitted to access the Kubernetes API. These values are only used
-      if EKSPublicAccessEndpoint is enabled. Can't contain private IP ranges.
-    Type: List<String>
-    Default: 0.0.0.0/0
   EKSPublicAccessEndpoint:
     Type: String
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
     Description: Configure access to the Kubernetes API server endpoint from outside of your VPC.
-  EKSClusterLoggingTypes:
-    Type: List<String>
-    Default: "api,audit,authenticator,controllerManager,scheduler"
-    AllowedPattern: "^(api|audit|authenticator|controllerManager|scheduler|,)*$"
-    ConstraintDescription: Valid logging types are api, audit, authenticator, controllerManager, scheduler.
-    Description: EKS cluster control plane logs to be exported to CloudWatch Logs.
-  EKSEncryptSecrets:
-    Type: String
-    AllowedValues: [Enabled, Disabled]
-    Default: Enabled
-    Description: Envelope encryption of Kubernetes secrets using KMS.
-  EKSEncryptSecretsKmsKeyArn:
-    Type: String
-    Default: ""
-    Description: "[OPTIONAL] KMS key to use for envelope encryption of Kubernetes secrets. If this parameter is omitted
-      A key will be created for the cluster. The CMK must be symmetric, created in the same region as the cluster, and
-      if the CMK was created in a different account, the user must have access to the CMK."
   VPCCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
@@ -393,34 +332,12 @@ Parameters:
   MaxNumberOfNodes:
     Default: 3
     Description: The maximum number of Amazon EKS node instances. The default is three node.
-    Type: Number  
-  NodeGroupName:
-    Default: Default
-    Description: The name for EKS node group.
-    Type: String
-  NodeVolumeSize:
-    Default: 20
-    Description: "The size for the node's root EBS volumes."
-    Type: String
+    Type: Number
   ManagedNodeGroup:
     AllowedValues: [ "yes", "no" ]
     Default: "no"
     Description: Choose if you want to use a managed node group. If you select "yes", you must select Kubernetes version 1.14 or higher.
     Type: String
-  ManagedNodeGroupAMIType:
-    Description: Select one of the two AMI types for your managed node group (only applies if you chose "yes" for ManagedNodeGroup). GPU instance types should use the AL2_x86_64_GPU AMI type, which uses the Amazon EKS-optimized Linux AMI with GPU support. Non-GPU instances should use the AL2_x86_64 AMI type, which uses the Amazon EKS-optimized Linux AMI.
-    AllowedValues: [ "AL2_x86_64", "AL2_x86_64_GPU", ""]
-    Default: "AL2_x86_64"
-    Type: String
-  MangedNodeGroupLabel:
-    Description: Add a custom name label to the managed node group nodes. If you dont do this then a default one will be added for you.
-    Type: String
-    Default: ''
-  KubernetesVersion:
-    Type: String
-    AllowedValues: [ "1.13", "1.14", "1.15", "1.16" ]
-    Default: "1.16"
-    Description: The Kubernetes control plane version.
   ClusterAutoScaler:
     Type: String
     AllowedValues: [ Enabled, Disabled ]
@@ -431,22 +348,6 @@ Parameters:
     AllowedValues: [ Enabled, Disabled ]
     Default: Disabled
     Description: Choose Enabled to enable EFS storage class, which will create the required EFS volume.
-  EfsPerformanceMode:
-    Type: String
-    AllowedValues: [ generalPurpose, maxIO ]
-    Default: generalPurpose
-    Description: Choose maxIO mode to provide greater IOPS with an increased latency. Only has an effect when EfsStorageClass is enabled.
-  EfsThroughputMode:
-    Type: String
-    AllowedValues: [ bursting, provisioned ]
-    Default: bursting
-    Description: Choose provisioned for throughput that is not dependent on the amount of data stored in the file system. Only has an effect when EfsStorageClass is enabled.
-  EfsProvisionedThroughputInMibps:
-    Type: Number
-    MinValue: 0
-    MaxValue: 1024
-    Default: 0
-    Description: Set to 0 if EfsThroughputMode is set to bursting. Only has an effect when EfsStorageClass is enabled. If using provisioned throughput, value must be between 0-1024.
   MonitoringStack:
     Type: String
     AllowedValues: [ "Prometheus + Grafana", "None" ]
@@ -478,11 +379,6 @@ Parameters:
       [OPTIONAL] Comma separated list of key=value pod labels. Requires at least one Fargate namespace to be specified.
       For a pod to be run on Fargate, all labels must match and it must be running in a namespace included in
       FargateNamespaces.
-  IamOidcProvider:
-    Type: String
-    AllowedValues: [ "Enabled", "Disabled" ]
-    Default: "Enabled"
-    Description: Enables IAM roles for Kubernetes service accounts.
   EKSClusterName:
     Type: String
     Default: ""
@@ -518,11 +414,6 @@ Parameters:
   ConfigSetName:
     Type: String
     Default: ""
-  TestSuite:
-    Type: String
-    AllowedValues: [Enabled, Disabled]
-    Default: Disabled
-    Description: Deploys a test stack that tests components of the Quick Start.
 Rules:
   LablesNeedNamespaces:
     RuleCondition: !Not
@@ -531,13 +422,6 @@ Rules:
       - AssertDescription: You must specify at least one Fargate namespace in order to enable fargate.
         Assert: !Not
           - !Equals [ !Ref FargateNamespaces, "" ]
-  EKSVersion_ManagedNodeGroup:
-    RuleCondition: !Equals [ !Ref 'ManagedNodeGroup', 'yes' ]
-    Assertions:
-      - AssertDescription: To use Managed Node Groups you must use EKS version 1.14 or higher
-        Assert: !Contains
-          - [ '1.16', '1.15', '1.14' ]
-          - !Ref 'KubernetesVersion'
 Conditions:
   CreateAdvancedConfigWithDefaults: !Equals [!Ref ConfigSetName, '']
   CreatePerAccountSharedResources: !Equals [!Ref PerAccountSharedResources, 'Yes']
@@ -646,40 +530,26 @@ Resources:
           - !Ref AWS::NoValue
         NumberOfNodes: !Ref NumberOfNodes
         MaxNumberOfNodes: !Ref MaxNumberOfNodes
-        NodeGroupName: !Ref NodeGroupName
-        NodeVolumeSize: !Ref NodeVolumeSize
         ManagedNodeGroup: !Ref ManagedNodeGroup
-        ManagedNodeGroupAMIType: !Ref ManagedNodeGroupAMIType
-        MangedNodeGroupLabel: !Ref MangedNodeGroupLabel
         NodeInstanceType: !Ref NodeInstanceType
         RemoteAccessCIDR: !Ref RemoteAccessCIDR
         AdditionalEKSAdminUserArn: !Ref AdditionalEKSAdminUserArn
         AdditionalEKSAdminRoleArn: !Ref AdditionalEKSAdminRoleArn
         VPCID: !GetAtt VPCStack.Outputs.VPCID
-        KubernetesVersion: !Ref KubernetesVersion
         ProvisionClusterAutoScaler: !Ref ClusterAutoScaler
         EfsStorageClass: !Ref EfsStorageClass
-        EfsPerformanceMode: !Ref EfsPerformanceMode
-        EfsThroughputMode: !Ref EfsThroughputMode
-        EfsProvisionedThroughputInMibps: !Ref EfsProvisionedThroughputInMibps
         ProvisionMonitoringStack: !Ref MonitoringStack
         ProvisionBastionHost: !Ref ProvisionBastionHost
-        EKSPublicAccessCIDRs: !Join [ ',', !Ref 'EKSPublicAccessCIDRs' ]
         EKSPublicAccessEndpoint: !Ref EKSPublicAccessEndpoint
-        EKSClusterLoggingTypes: !Join [ ',', !Ref 'EKSClusterLoggingTypes' ]
-        EKSEncryptSecrets: !Ref EKSEncryptSecrets
-        EKSEncryptSecretsKmsKeyArn: !Ref EKSEncryptSecretsKmsKeyArn
         ProvisionALBIngressController: !Ref ALBIngressController
         FargateLabels: !Ref FargateLabels
         FargateNamespaces: !Ref FargateNamespaces
-        IamOidcProvider: !Ref IamOidcProvider
         EKSClusterName: !Ref EKSClusterName
         SnykIntegrationId: !Ref SnykIntegrationId
         SnykIntegration: !Ref SnykIntegration
         NewRelicLicenseKey: !Ref NewRelicLicenseKey
         NewRelicIntegration: !Ref NewRelicIntegration
         ConfigSetName: !If [CreateAdvancedConfigWithDefaults, !Ref 'AWS::StackName', !Ref ConfigSetName]
-        TestSuite: !Ref TestSuite
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName
