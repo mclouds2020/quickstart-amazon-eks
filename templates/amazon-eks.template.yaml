@@ -157,6 +157,9 @@ Parameters:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]
     Default: "Enabled"
+  BastionAMIID:
+    Type: String
+    Default: ""
   EfsStorageClass:
     Type: String
     AllowedValues: [ Enabled, Disabled ]
@@ -251,7 +254,7 @@ Resources:
         EnableBanner: true
         BastionTenancy: default
         NumBastionHosts: "1"
-        OSImageOverride: ""
+        OSImageOverride: !Ref BastionAMIID
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
         PublicSubnet2ID: !If [2AZDeployment, !Ref PublicSubnet2ID, !Ref "AWS::NoValue"]
@@ -645,3 +648,5 @@ Outputs:
     Value: !GetAtt NodeGroupStack.Outputs.NodeAutoScalingGroup
   OIDCIssuerURL:
     Value : !GetAtt EKSControlPlane.Outputs.OIDCIssuerURL
+  NodeSGFunctionArn:
+    Value : !GetAtt FunctionStack.Outputs.NodeSGFunctionArn
