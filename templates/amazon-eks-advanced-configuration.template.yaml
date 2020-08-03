@@ -1,5 +1,115 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Creates SSM parameters that set advanced options for the Amazon EKS Quick Start.
+Description: Configure advanced options for the Amazon EKS Quick Start. (qs-1r0q2rlel)
+Metadata:
+  ConfigSetName: !Ref ConfigSetName
+  LintSpellExclude:
+    - https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
+    - Kubernetes
+    - Encrypt
+    - Mibps
+    - initialization
+    - bootstrapping
+    - maxIO
+    - CloudWatch Logs
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Quick Start Configuration
+        Parameters:
+          - ConfigSetName
+          - TestSuite
+      - Label:
+          default: EKS cluster configuration
+        Parameters:
+          - KubernetesVersion
+          - EKSPublicAccessCIDRs
+          - EKSPrivateAccessEndpoint
+          - EKSClusterLoggingTypes
+          - EKSEncryptSecrets
+          - EKSEncryptSecretsKmsKeyArn
+          - IamOidcProvider
+      - Label:
+          default: Default node group configuration
+        Parameters:
+          - NodeGroupName
+          - NodeAMIOS
+          - NodeVolumeSize
+          - ManagedNodeGroupAMIType
+          - MangedNodeGroupLabel
+          - CustomAmiId
+          - BootstrapArguments
+      - Label:
+          default: Bastion configuration
+        Parameters:
+          - BastionOS
+          - BastionBootstrapScript
+          - BastionInstanceType
+          - BastionRootVolumeSize
+          - BastionIAMRoleName
+          - BastionEnableTCPForwarding
+          - BastionEnableX11Forwarding
+          - BastionVariables
+      - Label:
+          default: EFS storage class configuration
+        Parameters:
+          - EfsPerformanceMode
+          - EfsThroughputMode
+          - EfsProvisionedThroughputInMibps
+    ParameterLabels:
+      ConfigSetName:
+        default: Config set name
+      KubernetesVersion:
+        default: Kubernetes version
+      EKSPublicAccessCIDRs:
+        default: Public access CIDRs
+      EKSPrivateAccessEndpoint:
+        default: Private access endpoint
+      EKSClusterLoggingTypes:
+        default: Cluster logging types
+      EKSEncryptSecrets:
+        default: Encrypt secrets
+      EKSEncryptSecretsKmsKeyArn:
+        default: Encrypt secrets KMS key ARN
+      IamOidcProvider:
+        default: Enable IAM OIDC provider
+      NodeGroupName:
+        default: Group name
+      NodeAMIOS:
+        default: Operating system
+      NodeVolumeSize:
+        default: Volume size
+      ManagedNodeGroupAMIType:
+        default: Managed node group AMI type
+      MangedNodeGroupLabel:
+        default: Managed node group label
+      CustomAmiId:
+        default: Custom AMI ID
+      BootstrapArguments:
+        default: Bootstrap arguments
+      BastionOS:
+        default: Operating system
+      BastionBootstrapScript:
+        default: Bootstrap script
+      BastionInstanceType:
+        default: Instance type
+      BastionRootVolumeSize:
+        default: Root volume size
+      BastionIAMRoleName:
+        default: IAM role name
+      BastionEnableTCPForwarding:
+        default: Enable TCP forwarding
+      BastionEnableX11Forwarding:
+        default: Enable X11 forwarding
+      BastionVariables:
+        default: Variables
+      EfsPerformanceMode:
+        default: Performance mode
+      EfsThroughputMode:
+        default: Throughput mode
+      EfsProvisionedThroughputInMibps:
+        default: Provisioned throughput in Mibps
+      TestSuite:
+        default: Test suite
 Parameters:
   ConfigSetName:
     Type: String
@@ -33,34 +143,7 @@ Parameters:
       - SUSE-SLES-15-HVM
     Default: Amazon-Linux-HVM
     Type: String
-  QSS3BucketName:
-    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
-      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
-      (-).
-    Default: aws-quickstart
-    Description: S3 bucket name for the Quick Start assets. This string can include
-      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
-      or end with a hyphen (-).
-    Type: String
-  QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: quickstart-amazon-eks/
-    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
-      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
-      forward slash (/).
-    Type: String
-  QSS3BucketRegion:
-    Default: 'us-east-1'
-    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
-      hosted. When using your own bucket, you must specify this value.
-    Type: String
-  LambdaZipsBucketName:
-    Description: '[OPTIONAL] The name of the S3 bucket where the Lambda zip files should be placed. If you leave this parameter blank, an S3 bucket will be created.'
-    Type: String
-    Default: ''
+    Description: Choose the operating system to be used for the default node group.
   EKSPublicAccessCIDRs:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
@@ -102,33 +185,42 @@ Parameters:
   BootstrapArguments:
     Type: String
     Default: ""
+    Description: Bootstrap arguments to pass to the EKS node bootstrap script, available arguments are listed in https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh .
   BastionOS:
     Type: String
     AllowedValues: [ "Amazon-Linux2-HVM", "Amazon-Linux-HVM", "CentOS-7-HVM", "Ubuntu-Server-14.04-LTS-HVM", "Ubuntu-Server-16.04-LTS-HVM", "SUSE-SLES-15-HVM" ]
     Default: "Amazon-Linux2-HVM"
+    Description: The Linux distribution for the AMI to be used for the bastion instances.
   BastionBootstrapScript:
     Default: ""
     Type: String
+    Description: An alternative initialization script to run during setup, if left blank the default bootstrap will script will be used.
   BastionInstanceType:
     Default: "t2.micro"
     Type: String
+    Description: Amazon EC2 instance type for the bastion instances.
   BastionRootVolumeSize:
     Type: Number
     Default: 10
+    Description: The size in GB for the root EBS volume.
   BastionIAMRoleName:
     Type: String
     Default: ""
+    Description: An existing IAM role name to attach to the bastion. if left blank, a new role will be created.
   BastionEnableTCPForwarding:
     Type: String
     Default: "false"
     AllowedValues: [ "true", "false" ]
+    Description: To enable TCP forwarding, choose true.
   BastionEnableX11Forwarding:
     Type: String
     Default: "false"
     AllowedValues: [ "true", "false" ]
+    Description: To enable X11 forwarding, choose true.
   BastionVariables:
     Type: String
     Default: ""
+    Description: A comma-separated list of environment variables for use in bootstrapping. Variables must be in the format KEY=VALUE. VALUE cannot contain commas.
   EfsPerformanceMode:
     Type: String
     AllowedValues: [ generalPurpose, maxIO ]

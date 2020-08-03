@@ -1,5 +1,18 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Shared resources required by all Amazon EKS Quick Start stacks in this region.
+Description: Shared resources required by all Amazon EKS Quick Start stacks in this region. (qs-1r0qgtna3)
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Quick Start configuration
+        Parameters:
+          - QSS3BucketName
+          - QSS3KeyPrefix
+    ParameterLabels:
+      QSS3BucketName:
+        default: Quick Start S3 bucket name
+      QSS3KeyPrefix:
+        default: Quick Start S3 key prefix
 Parameters:
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -19,11 +32,6 @@ Parameters:
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
-    Type: String
-  QSS3BucketRegion:
-    Default: 'us-east-1'
-    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
-      hosted. When using your own bucket, you must specify this value.
     Type: String
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']

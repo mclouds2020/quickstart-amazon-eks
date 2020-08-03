@@ -2,7 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploys an EKS cluster in a new VPC (qs-1p7nknoht)
 Metadata:
   LintSpellExclude:
-    - https://support.snyk.io/hc/en-us/articles/360003916158-Install-the-Snyk-controller-with-Helm
     - Kubernetes
     - ARNs
     - Resource Names
@@ -22,9 +21,7 @@ Metadata:
     - Security
     - New Relic
     - APN
-    - https://github.com/aws-quickstart/quickstart-eks-snyk/
-    - https://docs.newrelic.com/docs/accounts/install-new-relic/account-setup/license-key
-    - https://support.snyk.io/hc/en-us/articles/360003916158-Install-the-Snyk-controller-with-Helm
+    - 'No '
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -78,6 +75,9 @@ Metadata:
       - Label:
           default: AWS Quick Start configuration
         Parameters:
+          - PerAccountSharedResources
+          - PerRegionSharedResources
+          - ConfigSetName
           - QSS3BucketName
           - QSS3KeyPrefix
           - QSS3BucketRegion
@@ -148,6 +148,12 @@ Metadata:
         default: New Relic integration
       NewRelicLicenseKey:
         default: New Relic license key
+      PerAccountSharedResources:
+        default: Per account shared resources
+      PerRegionSharedResources:
+        default: Per region shared resources
+      ConfigSetName:
+        default: Config set name
 Parameters:
   AvailabilityZones:
     Description: The list of Availability Zones to use for the subnets in the VPC. Three
@@ -407,13 +413,16 @@ Parameters:
     Type: String
     AllowedValues: ['Yes', 'No']
     Default: 'Yes'
+    Description: Choose No if you have already deployed another EKS Quick Start stack in this AWS account.
   PerRegionSharedResources:
     Type: String
     AllowedValues: ['Yes', 'No']
     Default: 'Yes'
+    Description: Choose No if you have already deployed another EKS Quick Start stack in this region.
   ConfigSetName:
     Type: String
     Default: ""
+    Description: Name for the config set, if you have launched the advanced configuration stack, this name must match the ConfigSetName parameter in that stack for the configuration to be applied.
 Rules:
   LablesNeedNamespaces:
     RuleCondition: !Not
@@ -438,6 +447,7 @@ Resources:
   AdvancedConfigDefaultsStack:
     Type: AWS::CloudFormation::Stack
     Condition: CreateAdvancedConfigWithDefaults
+    Metadata: { cfn-lint: { config: { ignore_checks: [E9902, W9901] } } }
     Properties:
       TemplateURL: !Sub
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-advanced-configuration.template.yaml'
@@ -449,6 +459,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Condition: CreatePerAccountSharedResources
     DeletionPolicy: Retain
+    Metadata: { cfn-lint: { config: { ignore_checks: [W3011] } } }
     Properties:
       TemplateURL: !Sub
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-account-resources.template.yaml'
@@ -460,6 +471,7 @@ Resources:
     Condition: CreatePerRegionSharedResources
     DeletionPolicy: Retain
     Metadata:
+      cfn-lint: { config: { ignore_checks: [W3011] } }
       DependsOn: !If [CreatePerAccountSharedResources, !Ref AccountSharedResources, !Ref 'AWS::NoValue']
     Properties:
       TemplateURL: !Sub
@@ -469,7 +481,6 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        QSS3BucketRegion: !Ref QSS3BucketRegion
       Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: RegionalSharedResources}]
   VPCStack:
     Type: AWS::CloudFormation::Stack

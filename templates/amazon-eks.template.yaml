@@ -4,6 +4,7 @@ Transform: [QuickStartParameterResolver]
 Metadata:
   QSLint:
     Exclusions: [W9002, W9003, W9004, W9006]
+  ConfigSetName: !Ref ConfigSetName
 Parameters:
   KeyPairName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -293,7 +294,6 @@ Resources:
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         TargetGroupARNs: ""
-        ProvisionClusterAutoScaler: !Ref ProvisionClusterAutoScaler
         HttpProxy: !Ref HttpProxy
         KeyPairName: !Ref 'KeyPairName'
         NodeAMIOS: ~~/<ConfigSetName>/nodegroup/NodeAMIOS~~

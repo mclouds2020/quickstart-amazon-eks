@@ -309,9 +309,6 @@
         "Id": {
           "PrimitiveType": "String"
         },
-        "Url": {
-          "PrimitiveType": "String"
-        },
         "Uid": {
           "PrimitiveType": "String"
         },
@@ -335,8 +332,14 @@
           "PrimitiveType": "String",
           "UpdateType": "Mutable"
         },
+        "Url": {
+          "Required": false,
+          "Documentation": "https://github.com/aws-quickstart/quickstart-kubernetes-resource-provider",
+          "PrimitiveType": "String",
+          "UpdateType": "Mutable"
+        },
         "Manifest": {
-          "Required": true,
+          "Required": false,
           "Documentation": "https://github.com/aws-quickstart/quickstart-kubernetes-resource-provider",
           "PrimitiveType": "String",
           "UpdateType": "Mutable"

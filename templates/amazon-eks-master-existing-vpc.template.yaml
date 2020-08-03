@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Deploys an EKS cluster into an existing VPC (qs-1p7nknoht)
 Metadata:
   LintSpellExclude:
+    - Resource Name
     - Kubernetes
     - ARNs
     - Resource Names
@@ -12,6 +13,12 @@ Metadata:
     - vpc-0343606e
     - Lambda
     - maxIO
+    - Snyk
+    - New Relic
+    - Enabled
+    - Disabled
+    - Snyk
+    - 'No '
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -25,6 +32,7 @@ Metadata:
           - PublicSubnet2ID
           - PublicSubnet3ID
           - RemoteAccessCIDR
+          - HttpProxy
       - Label:
           default: Amazon EC2 configuration
         Parameters:
@@ -36,14 +44,15 @@ Metadata:
           - EKSClusterName
           - NodeInstanceType
           - NumberOfNodes
-          - ManagedNodeGroupAMIType
-          - MangedNodeGroupLabel
+          - EKSPublicAccessEndpoint
+          - ManagedNodeGroup
           - AdditionalEKSAdminUserArn
           - AdditionalEKSAdminRoleArn
       - Label:
           default: Snyk monitor [APN security partner]
         Parameters:
           - SnykIntegrationId
+          - SnykIntegration
       - Label:
           default: New Relic infrastructure [APN monitoring partner]
         Parameters:
@@ -52,6 +61,9 @@ Metadata:
       - Label:
           default: AWS Quick Start configuration
         Parameters:
+          - PerAccountSharedResources
+          - PerRegionSharedResources
+          - ConfigSetName
           - QSS3BucketName
           - QSS3KeyPrefix
           - QSS3BucketRegion
@@ -108,10 +120,22 @@ Metadata:
         default: EKS cluster name
       SnykIntegrationId:
         default: Snyk integration ID
+      SnykIntegration:
+        default: Snyk integration
       NewRelicIntegration:
         default: New Relic integration
       NewRelicLicenseKey:
         default: New Relic license key
+      EKSPublicAccessEndpoint:
+        default: EKS public access endpoint
+      HttpProxy:
+        default: HTTP proxy
+      ConfigSetName:
+        default: Config set name
+      PerAccountSharedResources:
+        default: Per account shared resources
+      PerRegionSharedResources:
+        default: Per region shared resources
 Parameters:
   KeyPairName:
     Description: The name of an existing public/private key pair, which allows you
@@ -247,15 +271,6 @@ Parameters:
     Default: "no"
     Description: Choose if you want to use a managed node group. If you select "yes", you must select Kubernetes version 1.14 or higher.
     Type: String
-  ManagedNodeGroupAMIType:
-    Description: Select one of the two AMI Types for your Managed Node Group (Only applies if you selected Managed Node Group "yes". ). GPU instance types should use the AL2_x86_64_GPU AMI type, which uses the Amazon EKS-optimized Linux AMI with GPU support. Non-GPU instances should use the AL2_x86_64 AMI type, which uses the Amazon EKS-optimized Linux AMI.
-    AllowedValues: [ "AL2_x86_64", " AL2_x86_64_GPU", ""]
-    Default: "AL2_x86_64"
-    Type: String
-  MangedNodeGroupLabel:
-    Description: Add a custom name label to the Managed Node Group Nodes. If you dont do this then a default one will be added for you.
-    Type: String
-    Default: ''
   VPCID:
     Type: "AWS::EC2::VPC::Id"
     Description: The ID of your existing VPC (e.g., vpc-0343606e)
@@ -330,7 +345,23 @@ Parameters:
     AllowedValues: [Enabled, Disabled]
     Default: Disabled
     Description: "New Relic infrastructure monitoring integration. For more information see https://github.com/aws-quickstart/quickstart-eks-newrelic-infrastructure/ ."
-
+  ConfigSetName:
+    Type: String
+    Default: ""
+    Description: Name for the config set, if you have launched the advanced configuration stack, this name must match the ConfigSetName parameter in that stack for the configuration to be applied.
+  PerAccountSharedResources:
+    Type: String
+    AllowedValues: ['Yes', 'No']
+    Default: 'Yes'
+    Description: Choose No if you have already deployed another EKS Quick Start stack in this AWS account.
+  PerRegionSharedResources:
+    Type: String
+    AllowedValues: ['Yes', 'No']
+    Default: 'Yes'
+    Description: Choose No if you have already deployed another EKS Quick Start stack in this region.
+Mappings:
+  Config:
+    Prefix: { Value: 'eks-quickstart' }
 Rules:
   ClusterAutoScalerVerification:
     RuleCondition: !Equals [ !Ref 'ManagedNodeGroup', 'yes' ]
@@ -341,7 +372,48 @@ Rules:
           - !Ref 'ClusterAutoScaler'
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
+  CreateAdvancedConfigWithDefaults: !Equals [!Ref ConfigSetName, '']
+  CreatePerAccountSharedResources: !Equals [!Ref PerAccountSharedResources, 'Yes']
+  CreatePerRegionSharedResources: !Equals [!Ref PerRegionSharedResources, 'Yes']
 Resources:
+  AccountSharedResources:
+    Type: AWS::CloudFormation::Stack
+    Condition: CreatePerAccountSharedResources
+    DeletionPolicy: Retain
+    Metadata: { cfn-lint: { config: { ignore_checks: [W3011] } } }
+    Properties:
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-account-resources.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: AccountSharedResources}]
+  RegionalSharedResources:
+    Type: AWS::CloudFormation::Stack
+    Condition: CreatePerRegionSharedResources
+    DeletionPolicy: Retain
+    Metadata:
+      cfn-lint: { config: { ignore_checks: [W3011] } }
+      DependsOn: !If [CreatePerAccountSharedResources, !Ref AccountSharedResources, !Ref 'AWS::NoValue']
+    Properties:
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-region-resources.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+      Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: RegionalSharedResources}]
+  AdvancedConfigDefaultsStack:
+    Type: AWS::CloudFormation::Stack
+    Condition: CreateAdvancedConfigWithDefaults
+    Metadata: { cfn-lint: { config: { ignore_checks: [E9902, W9901] } } }
+    Properties:
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-advanced-configuration.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        ConfigSetName: !Ref AWS::StackName
   EKSStack:
     Type: AWS::CloudFormation::Stack
     Metadata:
@@ -381,6 +453,7 @@ Resources:
         SnykIntegration: !Ref SnykIntegration
         NewRelicLicenseKey: !Ref NewRelicLicenseKey
         NewRelicIntegration: !Ref NewRelicIntegration
+        ConfigSetName: !If [CreateAdvancedConfigWithDefaults, !Ref 'AWS::StackName', !Ref ConfigSetName]
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName

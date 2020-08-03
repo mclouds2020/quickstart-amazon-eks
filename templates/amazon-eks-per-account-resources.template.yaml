@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Shared resources required by all Amazon EKS Quick Start stacks in this account.
+Description: Shared resources required by all Amazon EKS Quick Start stacks in this account. (qs-1r0qgtn7j)
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }

@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Prepare an existing EKS cluster (qs-1p817r5f9)"
 Metadata:
-  LintSpellExclude: [Security Group, Subnet IDs, No, vpc]
+  LintSpellExclude: ['http://10.101.0.100:3128/', Security Group, Subnet IDs, 'No', vpc]
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -10,6 +10,7 @@ Metadata:
           - KubeClusterName
           - VPCID
           - K8sSubnetIds
+          - HttpProxy
           - ControlPlaneSecurityGroup
           - PerAccountSharedResources
           - PerRegionSharedResources
@@ -29,6 +30,14 @@ Metadata:
         default: Deploy region level shared resources
       VPCID:
         default: VPC ID
+      QSS3BucketName:
+        default: Quick Start S3 bucket name
+      QSS3KeyPrefix:
+        default: Quick Start S3 key prefix
+      QSS3BucketRegion:
+        default: Quick Start S3 bucket region
+      HttpProxy:
+        default: HTTP proxy
 Parameters:
   KubeClusterName:
     Type: String
@@ -78,6 +87,10 @@ Parameters:
     Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
       hosted. When using your own bucket, you must specify this value.
     Type: String
+  HttpProxy:
+    Type: String
+    Default: ""
+    Description: "HTTP(S) proxy configuration, if provided all worker nodes and pod egress traffic will go use this proxy. Example: http://10.101.0.100:3128/"
 Conditions:
   CreatePerAccountSharedResources: !Equals [!Ref PerAccountSharedResources, 'Yes']
   CreatePerRegionSharedResources: !Equals [!Ref PerRegionSharedResources, 'Yes']
@@ -93,6 +106,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Condition: CreatePerAccountSharedResources
     DeletionPolicy: Retain
+    Metadata: { cfn-lint: { config: { ignore_checks: [W3011] } } }
     Properties:
       TemplateURL: !Sub
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-per-account-resources.template.yaml'
@@ -104,6 +118,7 @@ Resources:
     Condition: CreatePerRegionSharedResources
     DeletionPolicy: Retain
     Metadata:
+      cfn-lint: { config: { ignore_checks: [W3011] } }
       DependsOn: !If [CreatePerAccountSharedResources, !Ref AccountSharedResources, !Ref 'AWS::NoValue']
     Properties:
       TemplateURL: !Sub
@@ -113,7 +128,6 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        QSS3BucketRegion: !Ref QSS3BucketRegion
       Tags: [{Key: !FindInMap [Config, Prefix, Value], Value: RegionalSharedResources}]
   IamStack:
     Type: "AWS::CloudFormation::Stack"
@@ -142,6 +156,7 @@ Resources:
         VPCID: !Ref VPCID
         EKSSubnetIds: !Ref K8sSubnetIds
         EKSClusterName: !Ref KubeClusterName
+        HttpProxy: !Ref HttpProxy
 Outputs:
   EKSAdminRoleArn:
     Value: !GetAtt IamStack.Outputs.KubernetesAdminRoleArn
