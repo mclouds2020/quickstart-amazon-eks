@@ -1,8 +1,4 @@
 import requests
-from urllib.request import Request, urlopen
-from urllib.error import URLError
-import shutil
-import tempfile
 import logging
 from zipfile import ZipFile
 import subprocess
@@ -21,14 +17,14 @@ SUCCESS = "SUCCESS"
 FAILED = "FAILED"
 
 
-def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False):
+def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False, reason=''):
     responseUrl = event['ResponseURL']
 
     print(responseUrl)
 
     responseBody = {}
     responseBody['Status'] = responseStatus
-    responseBody['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name
+    responseBody['Reason'] = reason if reason else 'See the details in CloudWatch Log Stream: ' + context.log_stream_name
     responseBody['PhysicalResourceId'] = physicalResourceId or context.log_stream_name
     responseBody['StackId'] = event['StackId']
     responseBody['RequestId'] = event['RequestId']
@@ -67,23 +63,13 @@ def run_command(command):
     return code, output
 
 
-try:
-    with ZipFile("./awscli-exe-linux-x86_64.zip") as zip:
-        zip.extractall('/tmp/cli-install/')
-    run_command('chmod +x /tmp/cli-install/aws/dist/aws')
-    run_command('chmod +x /tmp/cli-install/aws/install')
-    c, r = run_command('/tmp/cli-install/aws/install -b /tmp/bin -i /tmp/aws-cli')
-    if c != 0:
-        raise Exception(f"Failed to install cli. Code: {c} Message: {r}")
-except URLError as e:
-    if hasattr(e, 'reason'):
-        logger.error('Fetching url failed: ', e.reason)
-        message = e.reason
-    elif hasattr(e, 'code'):
-        logger.error('Error code: ', e.code)
-        code = e.code
-    else:
-        logger.error(e)
+with ZipFile("./awscli-exe-linux-x86_64.zip") as zip:
+    zip.extractall('/tmp/cli-install/')
+run_command('chmod +x /tmp/cli-install/aws/dist/aws')
+run_command('chmod +x /tmp/cli-install/aws/install')
+c, r = run_command('/tmp/cli-install/aws/install -b /tmp/bin -i /tmp/aws-cli')
+if c != 0:
+    raise Exception(f"Failed to install cli. Code: {c} Message: {r}")
 
 
 def execute_cli(properties):
@@ -100,6 +86,7 @@ def handler(event, context):
     status = SUCCESS
     pid = 'None'
     resp = {}
+    reason = ''
     try:
         if event['RequestType'] != 'Delete':
             while not Path("/tmp/bin/aws").is_file():
@@ -112,6 +99,7 @@ def handler(event, context):
                 pid = str(resp)
     except Exception:
         logging.error('Unhandled exception', exc_info=True)
+        reason = (str(e))
         status = FAILED
     finally:
-        send(event, context, status, resp, pid)
+        send(event, context, status, resp, pid, reason=reason)
