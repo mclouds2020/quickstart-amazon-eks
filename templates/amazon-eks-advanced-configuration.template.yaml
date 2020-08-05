@@ -269,7 +269,7 @@ Resources:
     Properties:
       Type: String
       Value: !Sub
-      - '{ "Value": "[${JoinedEKSClusterLoggingTypes}]" }'
+      - '{ "Value": "${JoinedEKSClusterLoggingTypes}" }'
       - JoinedEKSClusterLoggingTypes: !Join [",", !Ref EKSClusterLoggingTypes]
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSClusterLoggingTypes", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   EKSEncryptSecretsParameter:
@@ -289,7 +289,7 @@ Resources:
     Properties:
       Type: String
       Value: !Sub
-        - '{ "Value": "[${JoinedEKSPublicAccessCIDRs}]" }'
+        - '{ "Value": "${JoinedEKSPublicAccessCIDRs}" }'
         - JoinedEKSPublicAccessCIDRs: !Join [",", !Ref EKSPublicAccessCIDRs]
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/controlplane/EKSPublicAccessCIDRs", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
   NodeGroupNameParameter:
