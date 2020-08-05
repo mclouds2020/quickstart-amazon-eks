@@ -309,7 +309,7 @@ Resources:
         CustomAmiId: ~~/<ConfigSetName>/default-nodegroup/CustomAmiId~~
         ManagedNodeGroup: !Ref ManagedNodeGroup
         ManagedNodeGroupAMIType: ~~/<ConfigSetName>/default-nodegroup/ManagedNodeGroupAMIType~~
-        MangedNodeGroupLabel: ~~/<ConfigSetName>/default-nodegroup/ManagedNodeGroupAMIType~~
+        MangedNodeGroupLabel: ~~/<ConfigSetName>/default-nodegroup/MangedNodeGroupLabel~~
         EKSControlPlane: !GetAtt EKSControlPlane.Outputs.EKSName
         ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
         NodeInstanceProfile: !GetAtt IamStack.Outputs.NodeInstanceProfile
