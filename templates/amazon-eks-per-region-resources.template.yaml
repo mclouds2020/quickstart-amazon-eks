@@ -485,7 +485,7 @@ Resources:
                       obj[i] = template_iterator(v, params, ssm, prefix)
               elif isinstance(obj, str):
                   func = partial(resolver, ssm, prefix, params['params'])
-                  obj = re.sub(r'~~[\w/<>]+~~', func, obj)
+                  obj = re.sub(r'~~[\w/<>-]+~~', func, obj)
               return obj
 
 
