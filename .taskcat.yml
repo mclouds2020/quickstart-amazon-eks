@@ -4,9 +4,6 @@ project:
   regions:
   - eu-north-1
   - me-south-1
-  - us-east-1
-  - us-east-2
-  - us-west-2
   template: templates/amazon-eks-master.template.yaml
   parameters:
     RemoteAccessCIDR: 10.0.0.0/16
@@ -45,7 +42,7 @@ tests:
       EKSPublicAccessEndpoint: Disabled
       ProvisionBastionHost: Enabled
     regions:
-    - us-west-2
+    - us-east-1
   efs-prov:
     parameters:
       AvailabilityZones: $[taskcat_genaz_3]
@@ -163,4 +160,3 @@ tests:
       TestSuite: Enabled
     regions:
     - ap-south-1
-    - us-west-2
