@@ -412,6 +412,19 @@ Resources:
         PerformanceMode: ~~/<ConfigSetName>/efs/EfsPerformanceMode~~
         EfsProvisionedThroughputInMibps: ~~/<ConfigSetName>/efs/EfsProvisionedThroughputInMibps~~
         ThroughputMode: ~~/<ConfigSetName>/efs/EfsThroughputMode~~
+  CleanupLambdas:
+    Type: Custom::LambdaCleanup
+    Properties:
+      ServiceToken: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-CleanupLambdas', {Prefix: !FindInMap [Config, Prefix, Value]}]
+      SecurityGroupId: !GetAtt ControlPlaneSecurityGroup.GroupId
+  CleanupControlPlaneSecurityGroupDependencies:
+    Type: Custom::LambdaSGCleanup
+    DependsOn: CleanupLambdas
+    Properties:
+      ServiceToken: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-CleanupSecurityGroupDependencies', {Prefix: !FindInMap [Config, Prefix, Value]}]
+      Region: !Ref "AWS::Region"
+      SecurityGroups:
+        - !GetAtt ControlPlaneSecurityGroup.GroupId
   ControlPlaneSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -428,6 +441,7 @@ Resources:
       ToPort: 443
   EKSControlPlane:
     Type: AWS::CloudFormation::Stack
+    DependsOn: CleanupControlPlaneSecurityGroupDependencies
     Properties:
       TemplateURL: !Sub
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-controlplane.template.yaml'
