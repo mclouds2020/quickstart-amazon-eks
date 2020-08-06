@@ -252,6 +252,7 @@ Resources:
                   - "ssm:GetParameter"
                   - "ssm:PutParameter"
                   - "sts:GetCallerIdentity"
+                  - "s3:GetObject"
                 Resource: "*"
   RegisterCustomResourceRole:
     Type: AWS::IAM::Role

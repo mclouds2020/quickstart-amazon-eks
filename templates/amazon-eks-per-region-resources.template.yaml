@@ -43,18 +43,6 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
-  RegisterTypePolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      Roles: [!Sub ['${Prefix}-RegisterType', {Prefix: !FindInMap [Config, Prefix, Value]}]]
-      PolicyName: !Sub ['${Prefix}-register-type-zip-bucket-access-${AWS::Region}', {Prefix: !FindInMap [Config, Prefix, Value]}]
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - "s3:GetObject"
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${LambdaZipsBucket}/functions/packages/*'
   CopyZipsRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
