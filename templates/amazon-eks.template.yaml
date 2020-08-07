@@ -408,12 +408,12 @@ Resources:
         ThroughputMode: ~~/<ConfigSetName>/efs/EfsThroughputMode~~
   CleanupLambdas:
     Type: Custom::LambdaCleanup
+    DependsOn: CleanupControlPlaneSecurityGroupDependencies
     Properties:
       ServiceToken: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-CleanupLambdas', {Prefix: !FindInMap [Config, Prefix, Value]}]
       SecurityGroupId: !GetAtt ControlPlaneSecurityGroup.GroupId
   CleanupControlPlaneSecurityGroupDependencies:
     Type: Custom::LambdaSGCleanup
-    DependsOn: CleanupLambdas
     Properties:
       ServiceToken: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-CleanupSecurityGroupDependencies', {Prefix: !FindInMap [Config, Prefix, Value]}]
       Region: !Ref "AWS::Region"
