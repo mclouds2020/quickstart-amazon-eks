@@ -2,7 +2,6 @@ project:
   name: quickstart-amazon-eks
   owner: quickstart-eng@amazon.com
   regions:
-  - eu-north-1
   - me-south-1
   - af-south-1
   - eu-south-1
@@ -162,3 +161,11 @@ tests:
       TestSuite: Enabled
     regions:
     - ap-south-1
+  windows:
+    parameters:
+      AvailabilityZones: $[taskcat_genaz_3]
+      ProvisionBastionHost: Disabled
+      TestSuite: Enabled
+      WindowsSupport: Enabled
+    regions:
+    - eu-north-1

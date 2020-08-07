@@ -590,6 +590,7 @@ Resources:
           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         ClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
+        TestWindows: !Ref WindowsSupport
   NewRelicStack:
     DependsOn: FunctionStack
     Condition: EnableNewRelic

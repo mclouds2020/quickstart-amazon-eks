@@ -6,6 +6,10 @@ Metadata:
 Parameters:
   ClusterName:
     Type: String
+  TestWindows:
+    Type: String
+Conditions:
+  EnableWindows: !Equals [!Ref TestWindows, 'Enabled']
 Resources:
   TestKubeGet:
     Type: "AWSQS::Kubernetes::Get"
@@ -20,12 +24,41 @@ Resources:
       ClusterName: !Ref ClusterName
       Namespace: kube-system
       Manifest: |
-        apiVersion: v1
-        kind: ConfigMap
+        apiVersion: batch/v1
+        kind: Job
         metadata:
-          name: cfn-apply-test
-        data:
-          this: was-made-by-cfn
+          name: test-job
+        spec:
+          template:
+            spec:
+              containers:
+              - name: test-job
+                image: amazonlinux:2
+                command: ["date"]
+              restartPolicy: OnFailure
+          backoffLimit: 4
+  EnableWindows:
+    Type: "AWSQS::Kubernetes::Resource"
+    Condition: EnableWindows
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: kube-system
+      Manifest: |
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: windows-test
+        spec:
+          template:
+            spec:
+              nodeSelector:
+                beta.kubernetes.io/os: windows
+              containers:
+              - name: windows-test-container
+                image: microsoft/windowsservercore
+                command: ["hostname"]
+              restartPolicy: OnFailure
+          backoffLimit: 4
 Outputs:
   TestKubeApplyResponse:
     Value: !GetAtt TestKubeApply.Uid
