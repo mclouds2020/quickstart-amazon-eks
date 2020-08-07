@@ -4,6 +4,8 @@ project:
   regions:
   - eu-north-1
   - me-south-1
+  - af-south-1
+  - eu-south-1
   template: templates/amazon-eks-master.template.yaml
   parameters:
     RemoteAccessCIDR: 10.0.0.0/16
