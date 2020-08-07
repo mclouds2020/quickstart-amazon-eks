@@ -526,6 +526,7 @@ Resources:
       Handler: index.handler
       Runtime: python3.7
       Role: !Sub ["arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-ParameterResolver", {Prefix: !FindInMap [Config, Prefix, Value]}]
+      Timeout: 900
   ParameterResolverFunctionPermissions:
     Type: AWS::Lambda::Permission
     Properties:
