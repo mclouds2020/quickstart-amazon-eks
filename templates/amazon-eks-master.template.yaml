@@ -323,7 +323,7 @@ Parameters:
   WindowsSupport:
     Type: String
     AllowedValues: [ "Enabled", "Disabled" ]
-    Default: "Enabled"
+    Default: "Disabled"
     Description: "Choose Enabled to create a Windows Nodegroup."
   WindowsNodeInstanceType:
     Default: t3.large
