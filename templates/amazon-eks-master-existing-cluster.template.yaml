@@ -141,6 +141,7 @@ Resources:
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         CreateBastionRole: "Disabled"
         BastionIAMRoleName: ""
+        CreateWindowsRole: "Disabled"
   FunctionStack:
     Type: "AWS::CloudFormation::Stack"
     Properties:
