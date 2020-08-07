@@ -90,6 +90,7 @@ Metadata:
           - QSS3BucketName
           - QSS3KeyPrefix
           - QSS3BucketRegion
+          - TestSuite
     ParameterLabels:
       AvailabilityZones:
         default: Availability Zones
@@ -173,6 +174,8 @@ Metadata:
         default: Per region shared resources
       ConfigSetName:
         default: Config set name
+      TestSuite:
+        default: Test suite
 Parameters:
   AvailabilityZones:
     Description: The list of Availability Zones to use for the subnets in the VPC. Three
@@ -402,6 +405,11 @@ Parameters:
     Type: String
     Default: ""
     Description: Name for the config set, if you have launched the advanced configuration stack, this name must match the ConfigSetName parameter in that stack for the configuration to be applied.
+  TestSuite:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Disabled
+    Description: Deploys a test stack that tests components of the Quick Start.
 Rules:
   LablesNeedNamespaces:
     RuleCondition: !Not
@@ -545,6 +553,7 @@ Resources:
         WindowsNumberOfNodes: !Ref WindowsNumberOfNodes
         WindowsNodeGroupName: !Ref WindowsNodeGroupName
         WindowsNodeVolumeSize: !Ref WindowsNodeVolumeSize
+        TestSuite: !Ref TestSuite
 Outputs:
   EKSClusterName:
     Value: !GetAtt EKSStack.Outputs.EKSClusterName

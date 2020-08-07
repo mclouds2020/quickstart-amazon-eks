@@ -155,12 +155,16 @@ Parameters:
     Default: Disabled
   ConfigSetName:
     Type: String
+  TestSuite:
+    Type: String
+    AllowedValues: [Enabled, Disabled]
+    Default: Disabled
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
     ParameterPrefix: { Value: '/quickstart/amazon-eks' }
 Conditions:
-  DeployTestStack: !Equals [~~/<ConfigSetName>/quickstart/TestSuite~~, Enabled]
+  DeployTestStack: !Equals [!Ref TestSuite, Enabled]
   EnableSnyk: !Equals [ !Ref SnykIntegration, Enabled]
   EnableNewRelic: !Equals [ !Ref NewRelicIntegration, Enabled]
   EnableFargate: !Not [!Equals [ !Ref FargateNamespaces, ""]]

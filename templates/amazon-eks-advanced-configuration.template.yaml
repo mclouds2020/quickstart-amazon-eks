@@ -17,7 +17,6 @@ Metadata:
           default: Quick Start Configuration
         Parameters:
           - ConfigSetName
-          - TestSuite
       - Label:
           default: EKS cluster configuration
         Parameters:
@@ -108,8 +107,6 @@ Metadata:
         default: Throughput mode
       EfsProvisionedThroughputInMibps:
         default: Provisioned throughput in Mibps
-      TestSuite:
-        default: Test suite
 Parameters:
   ConfigSetName:
     Type: String
@@ -237,11 +234,6 @@ Parameters:
     MaxValue: 1024
     Default: 0
     Description: Set to 0 if EfsThroughputMode is set to bursting. Only has an effect when EfsStorageClass is enabled. If using provisioned throughput, value must be between 0-1024.
-  TestSuite:
-    Type: String
-    AllowedValues: [Enabled, Disabled]
-    Default: Disabled
-    Description: Deploys a test stack that tests components of the Quick Start.
 Mappings:
   Config:
     ParameterPrefix: { Value: '/quickstart/amazon-eks' }
@@ -406,9 +398,3 @@ Resources:
       Type: String
       Value: !Sub '{ "Value": "${EfsProvisionedThroughputInMibps}" }'
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/efs/EfsProvisionedThroughputInMibps", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
-  TestSuiteParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Type: String
-      Value: !Sub '{ "Value": "${TestSuite}" }'
-      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/quickstart/TestSuite", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
