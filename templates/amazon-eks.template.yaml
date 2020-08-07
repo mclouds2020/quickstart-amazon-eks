@@ -289,6 +289,8 @@ Resources:
     Condition: EnableWindows
     DependsOn: WindowsSupportStack
     Type: "AWS::CloudFormation::Stack"
+    Metadata:
+      cfn-lint: { config: { ignore_checks: [E9902] } }
     Properties:
       TemplateURL: !Sub
         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/amazon-eks-windows-nodegroup.template.yaml'
@@ -299,7 +301,6 @@ Resources:
         PrivateSubnet1ID: !Ref PrivateSubnet1ID
         PrivateSubnet2ID: !If [2AZDeployment, !Ref PrivateSubnet2ID, !Ref "AWS::NoValue" ]
         PrivateSubnet3ID: !If [3AZDeployment, !Ref PrivateSubnet3ID, !Ref "AWS::NoValue" ]
-        VPCID: !Ref VPCID
         CustomAmiId: !Ref WindowsCustomAmiId
         NodeInstanceType: !Ref WindowsNodeInstanceType
         NumberOfNodes: !Ref WindowsNumberOfNodes
@@ -307,12 +308,11 @@ Resources:
         NodeVolumeSize: !Ref WindowsNodeVolumeSize
         NodeSecurityGroup: !GetAtt NodeGroupStack.Outputs.EKSNodeSecurityGroup
         ClusterName: !GetAtt EKSControlPlane.Outputs.EKSName
-        ControlPlaneSecurityGroup: !Ref ControlPlaneSecurityGroup
         NodeInstanceProfile: !GetAtt IamStack.Outputs.WindowsNodeInstanceProfile
         NodeInstanceRoleArn: !GetAtt IamStack.Outputs.WindowsNodeInstanceRoleArn
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        QSS3BucketRegion: !Ref QSS3BucketRegion
+        NodeAmiIdSSMParam: /aws/service/ami-windows-latest/Windows_Server-2019-English-Core-EKS_Optimized-1.14/image_id
+        BootstrapArguments: ""
+        MaxNumberOfNodes: ""
   BastionSShToNodes:
     Condition: EnableBastion
     Type: "AWS::EC2::SecurityGroupIngress"

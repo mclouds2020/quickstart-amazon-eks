@@ -1,5 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "deploy a workload to the cluster to prepare the cluster for running Windows workloads"
+Description: "deploy a workload to the cluster to prepare the cluster for running Windows workloads (qs-1r15gqig4)"
+Metadata:
+  QSLint:
+    Exclusions: [W9002, W9003, W9004, W9006]
 Parameters:
   ClusterName:
     Type: String
@@ -121,7 +124,7 @@ Resources:
                     yum install -y awscli;
                     export AWS_REGION=${AWS::Region};
                     echo ${!S3_SCRIPT_URL};
-                    aws s3 cp ${!S3_SCRIPT_URL} ./windows-setup.sh;
+                    aws s3 cp --region ${QSS3BucketRegion} ${!S3_SCRIPT_URL} ./windows-setup.sh;
                     chmod +x ./windows-setup.sh;
                     ./windows-setup.sh
                 env:
